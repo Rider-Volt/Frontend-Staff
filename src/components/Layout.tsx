@@ -1,16 +1,21 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, 
   Car, 
   ClipboardCheck, 
   CreditCard, 
   AlertCircle,
-  Menu
+  Menu,
+  Calendar,
+  LogOut,
+  User
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,10 +27,12 @@ const navigation = [
   { name: "Giao/Nhận xe", href: "/handover", icon: ClipboardCheck },
   { name: "Thanh toán", href: "/payment", icon: CreditCard },
   { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
+  { name: 'Quản lý đơn thuê', href: '/StationStaff/orders', icon: Calendar },
 ];
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -53,6 +60,29 @@ const Sidebar = () => {
           );
         })}
       </nav>
+      
+      {/* User info and logout */}
+      <div className="border-t border-sidebar-border p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center">
+              <User className="h-4 w-4 text-sidebar-accent-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-sidebar-foreground">{user?.name}</p>
+              <p className="text-xs text-sidebar-foreground/70 capitalize">{user?.role}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={logout}
+            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent/50"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

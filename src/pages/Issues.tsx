@@ -9,9 +9,9 @@ import { AlertCircle, Camera, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 const mockIssues = [
-  { id: "1", vehicle: "29A-123.45", issue: "Pin không sạc được", status: "pending", time: "30 phút trước" },
-  { id: "2", vehicle: "29B-678.90", issue: "Phanh sau bị kẹt", status: "resolved", time: "2 giờ trước" },
-  { id: "3", vehicle: "29C-234.56", issue: "Đèn trước không sáng", status: "pending", time: "1 ngày trước" },
+  { id: "1", vehicle: "VinFast Klara S", issue: "Pin không sạc được", status: "pending", time: "30 phút trước" },
+  { id: "2", vehicle: "Yadea Xmen Neo", issue: "Phanh sau bị kẹt", status: "resolved", time: "2 giờ trước" },
+  { id: "3", vehicle: "Pega NewTech", issue: "Đèn trước không sáng", status: "pending", time: "1 ngày trước" },
 ];
 
 const Issues = () => {

@@ -12,7 +12,6 @@ import {
 interface VehicleCardProps {
   id: string;
   name: string;
-  licensePlate: string;
   status: "available" | "booked" | "rented" | "maintenance";
   batteryLevel: number;
   location: string;
@@ -30,7 +29,6 @@ const statusConfig = {
 
 export const VehicleCard = ({
   name,
-  licensePlate,
   status,
   batteryLevel,
   location,
@@ -46,7 +44,6 @@ export const VehicleCard = ({
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <h3 className="font-semibold text-lg text-foreground">{name}</h3>
-            <p className="text-sm text-muted-foreground mt-0.5">{licensePlate}</p>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

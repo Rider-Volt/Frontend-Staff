@@ -8,10 +8,11 @@ import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-station.jpg";
 
 const mockVehicles = [
-  { id: "1", name: "VinFast Klara S", licensePlate: "29A-123.45", status: "available" as const, batteryLevel: 95, location: "Khu A" },
-  { id: "2", name: "Yadea Xmen Neo", licensePlate: "29B-678.90", status: "rented" as const, batteryLevel: 45, location: "Khu B" },
-  { id: "3", name: "Pega NewTech", licensePlate: "29C-234.56", status: "booked" as const, batteryLevel: 80, location: "Khu A" },
+  { id: "1", name: "VinFast Klara S", status: "available" as const, batteryLevel: 95, location: "Khu A" },
+  { id: "2", name: "Yadea Xmen Neo", status: "rented" as const, batteryLevel: 45, location: "Khu B" },
+  { id: "3", name: "Pega NewTech", status: "booked" as const, batteryLevel: 80, location: "Khu A" },
 ];
+
 
 const Dashboard = () => {
   const navigate = useNavigate();

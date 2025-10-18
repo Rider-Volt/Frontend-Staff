@@ -1,0 +1,40 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="32" height="32" rx="6" fill="url(#bgGradient)"/>
+  
+  <!-- Car outline -->
+  <path d="M6 20C6 18.8954 6.89543 18 8 18H24C25.1046 18 26 18.8954 26 20V22C26 23.1046 25.1046 24 24 24H8C6.89543 24 6 23.1046 6 22V20Z" 
+        stroke="#22C55E" stroke-width="2" fill="none"/>
+  
+  <!-- Car wheels -->
+  <circle cx="10" cy="22" r="2" fill="#22C55E"/>
+  <circle cx="22" cy="22" r="2" fill="#22C55E"/>
+  
+  <!-- Car cabin -->
+  <path d="M10 18V14C10 12.8954 10.8954 12 12 12H20C21.1046 12 22 12.8954 22 14V18" 
+        stroke="#22C55E" stroke-width="1.5" fill="none"/>
+  
+  <!-- Leaf inside car -->
+  <path d="M14 16C14 15 15 14 16 14C17 14 18 15 18 16C18 17 17 18 16 18C15 18 14 17 14 16Z" 
+        fill="url(#leafGradient)"/>
+  
+  <!-- Charging plug on top -->
+  <path d="M16 8L16 12" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+  <path d="M14 10L18 10" stroke="#22C55E" stroke-width="2" stroke-linecap="round"/>
+  <path d="M15 8L17 8" stroke="#22C55E" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Lightning bolt in plug -->
+  <path d="M15.5 9.5L16.5 10.5L15.5 11.5" stroke="white" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Gradients -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#059669;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#84CC16;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22C55E;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
