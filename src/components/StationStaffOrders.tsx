@@ -1,308 +1,236 @@
-import { useState } from "react";
-import { Layout } from "@/components/Layout";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Search, 
-  Filter, 
-  Eye, 
-  CheckCircle, 
-  XCircle, 
-  Clock,
-  Calendar,
-  User,
-  Car
-} from "lucide-react";
-import { toast } from "sonner";
+import { useMemo, useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Car, User, Phone, Calendar, Clock, MapPin } from 'lucide-react';
 
-// Mock data cho đơn thuê xe
-const mockOrders = [
+type OrderStatus = 'pending' | 'confirmed' | 'ongoing' | 'completed' | 'cancelled';
+
+interface StaffOrder {
+  id: string;
+  vehicleId: string;
+  vehicleName: string;
+  customerName: string;
+  customerPhone: string;
+  pickupTime: Date;
+  returnTime: Date;
+  pickupLocation: string;
+  status: OrderStatus;
+  notes?: string;
+}
+
+const initialOrders: StaffOrder[] = [
   {
-    id: "ORD001",
-    customerName: "Nguyễn Văn A",
-    customerPhone: "0912345678",
-    vehiclePlate: "29A-123.45",
-    vehicleModel: "VinFast Klara S",
-    startDate: "2024-01-15",
-    endDate: "2024-01-18",
-    status: "active",
-    totalAmount: 1500000,
-    deposit: 500000,
-    createdAt: "2024-01-15T08:00:00Z"
+    id: 'ORD-001',
+    vehicleId: 'VF8-001',
+    vehicleName: 'VinFast VF8',
+    customerName: 'Nguyễn Văn A',
+    customerPhone: '0901234567',
+    pickupTime: new Date('2025-01-15T09:00:00'),
+    returnTime: new Date('2025-01-16T09:00:00'),
+    pickupLocation: 'EV Station A',
+    status: 'pending',
   },
   {
-    id: "ORD002", 
-    customerName: "Trần Thị B",
-    customerPhone: "0987654321",
-    vehiclePlate: "29A-456.78",
-    vehicleModel: "VinFast VF8",
-    startDate: "2024-01-16",
-    endDate: "2024-01-20",
-    status: "completed",
-    totalAmount: 2000000,
-    deposit: 800000,
-    createdAt: "2024-01-16T09:30:00Z"
+    id: 'ORD-002',
+    vehicleId: 'VF7-011',
+    vehicleName: 'VinFast VF7',
+    customerName: 'Trần Thị B',
+    customerPhone: '0912345678',
+    pickupTime: new Date('2025-01-16T10:00:00'),
+    returnTime: new Date('2025-01-17T10:00:00'),
+    pickupLocation: 'EV Station B',
+    status: 'confirmed',
   },
   {
-    id: "ORD003",
-    customerName: "Lê Văn C",
-    customerPhone: "0123456789",
-    vehiclePlate: "29A-789.01",
-    vehicleModel: "VinFast Klara S",
-    startDate: "2024-01-17",
-    endDate: "2024-01-19",
-    status: "cancelled",
-    totalAmount: 1200000,
-    deposit: 400000,
-    createdAt: "2024-01-17T10:15:00Z"
-  }
+    id: 'ORD-003',
+    vehicleId: 'VF6-005',
+    vehicleName: 'VinFast VF6',
+    customerName: 'Phạm Quốc C',
+    customerPhone: '0988888888',
+    pickupTime: new Date('2025-01-14T08:30:00'),
+    returnTime: new Date('2025-01-15T08:30:00'),
+    pickupLocation: 'EV Station C',
+    status: 'ongoing',
+  },
+  {
+    id: 'ORD-004',
+    vehicleId: 'KLA-101',
+    vehicleName: 'VinFast Klara',
+    customerName: 'Đỗ Ngọc D',
+    customerPhone: '0977777777',
+    pickupTime: new Date('2025-01-12T13:00:00'),
+    returnTime: new Date('2025-01-12T17:00:00'),
+    pickupLocation: 'EV Station A',
+    status: 'completed',
+  },
 ];
 
+const statusBadge = (s: OrderStatus) => {
+  switch (s) {
+    case 'pending':
+      return <Badge className="bg-gray-100 text-gray-800">Chờ xác nhận</Badge>;
+    case 'confirmed':
+      return <Badge className="bg-blue-100 text-blue-800">Đã xác nhận</Badge>;
+    case 'ongoing':
+      return <Badge className="bg-yellow-100 text-yellow-800">Đang thuê</Badge>;
+    case 'completed':
+      return <Badge className="bg-green-100 text-green-800">Hoàn thành</Badge>;
+    case 'cancelled':
+      return <Badge className="bg-red-100 text-red-800">Đã hủy</Badge>;
+  }
+};
+
+const formatDateTime = (d: Date) =>
+  d.toLocaleString('vi-VN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+
 const StationStaffOrders = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("all");
-  const [orders] = useState(mockOrders);
+  const [orders, setOrders] = useState<StaffOrder[]>(initialOrders);
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<OrderStatus | 'all'>('all');
 
-  // Lọc đơn hàng theo tìm kiếm và trạng thái
-  const filteredOrders = orders.filter(order => {
-    const matchesSearch = 
-      order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      order.vehiclePlate.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = selectedStatus === "all" || order.status === selectedStatus;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filtered = useMemo(() => {
+    let list = orders;
+    if (tab !== 'all') list = list.filter(o => o.status === tab);
+    const q = search.trim().toLowerCase();
+    if (!q) return list;
+    return list.filter(o => [o.id, o.vehicleId, o.vehicleName, o.customerName, o.customerPhone, o.pickupLocation]
+      .some(f => f.toLowerCase().includes(q)));
+  }, [orders, search, tab]);
 
-  // Thống kê
-  const stats = {
-    total: orders.length,
-    active: orders.filter(o => o.status === "active").length,
-    completed: orders.filter(o => o.status === "completed").length,
-    cancelled: orders.filter(o => o.status === "cancelled").length
+  const updateStatus = (id: string, status: OrderStatus) => {
+    setOrders(prev => prev.map(o => (o.id === id ? { ...o, status } : o)));
   };
 
-  const getStatusBadge = (status: string) => {
+  const actionOptions = (status: OrderStatus): { label: string; value: OrderStatus }[] => {
     switch (status) {
-      case "active":
-        return <Badge variant="default" className="bg-blue-500">Đang thuê</Badge>;
-      case "completed":
-        return <Badge variant="default" className="bg-green-500">Hoàn thành</Badge>;
-      case "cancelled":
-        return <Badge variant="destructive">Đã hủy</Badge>;
+      case 'pending':
+        return [
+          { label: 'Xác nhận', value: 'confirmed' },
+          { label: 'Hủy', value: 'cancelled' },
+        ];
+      case 'confirmed':
+        return [
+          { label: 'Bắt đầu thuê', value: 'ongoing' },
+          { label: 'Hủy', value: 'cancelled' },
+        ];
+      case 'ongoing':
+        return [
+          { label: 'Hoàn thành', value: 'completed' },
+          { label: 'Hủy', value: 'cancelled' },
+        ];
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return [];
     }
   };
 
-  const handleViewOrder = (orderId: string) => {
-    toast.info(`Xem chi tiết đơn hàng ${orderId}`);
-  };
-
-  const handleCompleteOrder = (orderId: string) => {
-    toast.success(`Hoàn thành đơn hàng ${orderId}`);
-  };
-
-  const handleCancelOrder = (orderId: string) => {
-    toast.error(`Hủy đơn hàng ${orderId}`);
-  };
-
   return (
-    <Layout>
-      <div className="p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Quản lý đơn thuê</h1>
-          <p className="text-muted-foreground">Theo dõi và quản lý các đơn thuê xe</p>
-        </div>
-
-        {/* Thống kê */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-6">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Tổng đơn hàng</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Đang thuê</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.active}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Hoàn thành</CardTitle>
-              <CheckCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Đã hủy</CardTitle>
-              <XCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.cancelled}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bộ lọc và tìm kiếm */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Tìm kiếm và lọc</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Label htmlFor="search">Tìm kiếm</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="search"
-                    placeholder="Tìm theo ID, tên khách hàng, biển số xe..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div className="w-48">
-                <Label htmlFor="status">Trạng thái</Label>
-                <select
-                  id="status"
-                  value={selectedStatus}
-                  onChange={(e) => setSelectedStatus(e.target.value)}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="all">Tất cả</option>
-                  <option value="active">Đang thuê</option>
-                  <option value="completed">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
+    <div className="space-y-6">
+      <Card className="shadow-sm hover:shadow-md transition border border-gray-100 rounded-xl">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-xl font-bold">Đơn thuê tại trạm</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <Input
+              placeholder="Tìm theo mã đơn, xe, khách hàng, SĐT, địa điểm..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full sm:max-w-lg"
+            />
+            <div className="w-full sm:w-64">
+              <Select value={tab} onValueChange={(v) => setTab(v as OrderStatus | 'all')}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả</SelectItem>
+                  <SelectItem value="pending">Chờ</SelectItem>
+                  <SelectItem value="confirmed">Xác nhận</SelectItem>
+                  <SelectItem value="ongoing">Đang thuê</SelectItem>
+                  <SelectItem value="completed">Hoàn thành</SelectItem>
+                  <SelectItem value="cancelled">Đã hủy</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Danh sách đơn hàng */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Danh sách đơn hàng</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ID</TableHead>
-                    <TableHead>Khách hàng</TableHead>
-                    <TableHead>Xe</TableHead>
-                    <TableHead>Ngày thuê</TableHead>
-                    <TableHead>Ngày trả</TableHead>
-                    <TableHead>Tổng tiền</TableHead>
-                    <TableHead>Trạng thái</TableHead>
-                    <TableHead>Thao tác</TableHead>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Mã đơn</TableHead>
+                  <TableHead>Xe</TableHead>
+                  <TableHead>Khách hàng</TableHead>
+                  <TableHead>Nhận</TableHead>
+                  <TableHead>Trả</TableHead>
+                  <TableHead>Địa điểm</TableHead>
+                  <TableHead>Trạng thái</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filtered.map(o => (
+                  <TableRow key={o.id} className="hover:bg-gray-50">
+                    <TableCell className="font-medium">{o.id}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Car className="w-4 h-4 text-gray-500" />
+                        {o.vehicleName}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2"><User className="w-4 h-4 text-gray-500" />{o.customerName}</div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600"><Phone className="w-4 h-4" />{o.customerPhone}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-500" />{formatDateTime(o.pickupTime)}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-gray-500" />{formatDateTime(o.returnTime)}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-500" />{o.pickupLocation}</div>
+                    </TableCell>
+                    <TableCell>{statusBadge(o.status)}</TableCell>
+                    <TableCell className="text-right">
+                      {['completed','cancelled'].includes(o.status) ? (
+                        <span className="text-sm text-gray-500">Không có thao tác</span>
+                      ) : (
+                        <div className="inline-block w-44">
+                          <Select onValueChange={(v) => updateStatus(o.id, v as OrderStatus)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Chọn thao tác" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {actionOptions(o.status).map(opt => (
+                                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.customerName}</div>
-                          <div className="text-sm text-muted-foreground">{order.customerPhone}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.vehiclePlate}</div>
-                          <div className="text-sm text-muted-foreground">{order.vehicleModel}</div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{order.startDate}</TableCell>
-                      <TableCell>{order.endDate}</TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium">{order.totalAmount.toLocaleString()} VNĐ</div>
-                          <div className="text-sm text-muted-foreground">
-                            Cọc: {order.deposit.toLocaleString()} VNĐ
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>{getStatusBadge(order.status)}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewOrder(order.id)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {order.status === "active" && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCompleteOrder(order.id)}
-                                className="text-green-600"
-                              >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleCancelOrder(order.id)}
-                                className="text-red-600"
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-            
-            {filteredOrders.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                Không tìm thấy đơn hàng nào
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </Layout>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
 export default StationStaffOrders;
+
+

@@ -1,6 +1,7 @@
-import { ReactNode, useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ReactNode } from "react";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   LayoutDashboard, 
   Car, 
@@ -15,27 +16,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
 
 interface LayoutProps {
   children: ReactNode;
 }
 
-// Custom Car Icon Component
-const CarIcon = ({ className }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-    <path d="M4 12h16M6 8h12v8H6V8z"/>
-    <path d="M8 6h8v2H8V6z"/>
-    <path d="M10 4h4v2h-4V4z"/>
-    <circle cx="7" cy="16" r="2"/>
-    <circle cx="17" cy="16" r="2"/>
-    <path d="M6 10h12v4H6v-4z"/>
-  </svg>
-);
-
 const navigation = [
   { name: "Tổng quan", href: "/", icon: LayoutDashboard },
-  { name: "Quản lý xe", href: "/vehicles", icon: CarIcon },
+  { name: "Quản lý xe", href: "/vehicles", icon: Car },
   { name: "Giao/Nhận xe", href: "/handover", icon: ClipboardCheck },
   { name: "Thanh toán", href: "/payment", icon: CreditCard },
   { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
@@ -44,25 +32,7 @@ const navigation = [
 
 const Sidebar = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const [user, setUser] = useState<any>(null);
-
-  useEffect(() => {
-    // Lấy thông tin user từ localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
-
-  const handleLogout = () => {
-    // Xóa dữ liệu đăng nhập
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    toast.success("Đã đăng xuất thành công!");
-    navigate('/login');
-  };
+  const { user, logout } = useAuth();
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -106,7 +76,7 @@ const Sidebar = () => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleLogout}
+            onClick={logout}
             className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent/50"
           >
             <LogOut className="h-4 w-4" />
