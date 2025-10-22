@@ -1,46 +1,16 @@
 import { Layout } from "@/components/Layout";
-import StatCard from "@/components/StatCard";
-import VehicleCard from "@/components/VehicleCard";
+import { StatCard } from "@/components/StatCard";
+import { VehicleCard } from "@/components/VehicleCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Battery, Clock, AlertCircle, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-// import heroImage from "@/assets/hero-station.jpg";
+import heroImage from "@/assets/hero-station.jpg";
 
 const mockVehicles = [
-  { 
-    id: "1", 
-    licensePlate: "29A-123.45",
-    model: "Klara S",
-    brand: "VinFast",
-    status: "available" as const, 
-    batteryLevel: 95, 
-    location: "Khu A",
-    rentalPrice: 500000,
-    lastMaintenance: "2024-01-10"
-  },
-  { 
-    id: "2", 
-    licensePlate: "29A-456.78",
-    model: "Xmen Neo",
-    brand: "Yadea",
-    status: "rented" as const, 
-    batteryLevel: 45, 
-    location: "Khu B",
-    rentalPrice: 400000,
-    lastMaintenance: "2024-01-08"
-  },
-  { 
-    id: "3", 
-    licensePlate: "29A-789.01",
-    model: "NewTech",
-    brand: "Pega",
-    status: "maintenance" as const, 
-    batteryLevel: 80, 
-    location: "Khu A",
-    rentalPrice: 450000,
-    lastMaintenance: "2024-01-12"
-  },
+  { id: "1", name: "VinFast Klara S", status: "available" as const, batteryLevel: 95, location: "Khu A" },
+  { id: "2", name: "Yadea Xmen Neo", status: "rented" as const, batteryLevel: 45, location: "Khu B" },
+  { id: "3", name: "Pega NewTech", status: "booked" as const, batteryLevel: 80, location: "Khu A" },
 ];
 
 
@@ -51,7 +21,13 @@ const Dashboard = () => {
     <Layout>
       <div className="min-h-screen">
         {/* Hero Section */}
-        <div className="relative h-64 overflow-hidden bg-gradient-to-r from-primary to-primary/80">
+        <div className="relative h-64 overflow-hidden">
+          <img 
+            src={heroImage} 
+            alt="EV Station" 
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
           <div className="absolute inset-0 flex items-center px-8">
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">Chào mừng trở lại!</h1>
@@ -67,25 +43,26 @@ const Dashboard = () => {
               title="Xe sẵn sàng"
               value={12}
               icon={Car}
-              trend={{ value: 8, label: "so với tháng trước" }}
+              variant="success"
+              trend={{ value: 8, isPositive: true }}
             />
             <StatCard
               title="Đang cho thuê"
               value={8}
               icon={Clock}
-              description="Xe đang được sử dụng"
+              variant="primary"
             />
             <StatCard
               title="Pin trung bình"
               value="78%"
               icon={Battery}
-              description="Mức pin trung bình"
+              variant="warning"
             />
             <StatCard
               title="Sự cố"
               value={2}
               icon={AlertCircle}
-              description="Cần xử lý"
+              variant="default"
             />
           </div>
 
@@ -141,9 +118,9 @@ const Dashboard = () => {
                 <VehicleCard
                   key={vehicle.id}
                   {...vehicle}
-                  onView={(id) => navigate(`/vehicles/${id}`)}
-                  onEdit={(id) => navigate(`/vehicles/${id}/edit`)}
-                  onRent={(id) => navigate("/handover")}
+                  onHandover={() => navigate("/handover")}
+                  onUpdateStatus={() => {}}
+                  onReport={() => navigate("/issues")}
                 />
               ))}
             </div>
