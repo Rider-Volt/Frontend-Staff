@@ -42,7 +42,8 @@ const accountService = {
         userName: 'staff',
         name: staffName, // Sử dụng staffName từ API response
         stationId: stationId,
-        accessToken: accessToken
+        accessToken: accessToken,
+        role: 'staff'
       };
 
       localStorage.setItem('userData', JSON.stringify(userData));
@@ -55,6 +56,53 @@ const accountService = {
       return response.data;
     } catch (error) {
       throw error.response?.data || { message: "Đăng nhập thất bại" };
+    }
+  },
+
+  // Hàm đăng nhập cho admin
+  adminLogin: async (email: string, password: string) => {
+    try {
+      const response = await apiRequest("/admin/login", {
+        method: "POST",
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
+
+      // Lưu thông tin admin vào localStorage
+      const { adminId, adminName, accessToken, role } = response.data;
+      const userData = {
+        userID: adminId,
+        userName: 'admin',
+        name: adminName,
+        accessToken: accessToken,
+        role: role || 'admin'
+      };
+
+      localStorage.setItem('userData', JSON.stringify(userData));
+      
+      console.log('Admin API Response:', response.data);
+      console.log('Admin user data saved:', userData);
+
+      return response.data;
+    } catch (error) {
+      throw error.response?.data || { message: "Đăng nhập admin thất bại" };
+    }
+  },
+
+  // Hàm đăng nhập thông minh - tự động phát hiện role
+  smartLogin: async (email: string, password: string) => {
+    try {
+      // Thử đăng nhập admin trước
+      try {
+        return await accountService.adminLogin(email, password);
+      } catch (adminError) {
+        // Nếu admin login thất bại, thử staff login
+        return await accountService.login(email, password);
+      }
+    } catch (error) {
+      throw error;
     }
   },
 
@@ -78,7 +126,25 @@ const accountService = {
   // Lấy role hiển thị của user hiện tại
   getDisplayRole: () => {
     const user = accountService.getCurrentUser();
-    return user?.userName || 'staff';
+    return user?.role || user?.userName || 'staff';
+  },
+
+  // Lấy role thực tế của user
+  getUserRole: () => {
+    const user = accountService.getCurrentUser();
+    return user?.role || 'staff';
+  },
+
+  // Kiểm tra xem user có phải admin không
+  isAdmin: () => {
+    const user = accountService.getCurrentUser();
+    return user?.role === 'admin' || user?.userName === 'admin';
+  },
+
+  // Kiểm tra xem user có phải staff không
+  isStaff: () => {
+    const user = accountService.getCurrentUser();
+    return user?.role === 'staff' || user?.userName === 'staff';
   },
 
   // Kiểm tra user đã đăng nhập chưa
@@ -114,17 +180,16 @@ const accountService = {
 
   // Kiểm tra quyền admin của user hiện tại
   hasAdminAccess: () => {
-    const userData = localStorage.getItem('userData');
-    if (!userData) return false;
-    
-    try {
-      const parsedUserData = JSON.parse(userData);
-      // Kiểm tra nếu userName là 'admin' hoặc 'staff'
-      return parsedUserData.userName === 'admin' || parsedUserData.userName === 'staff';
-    } catch (error) {
-      console.error('Lỗi khi parse userData:', error);
-      return false;
+    return accountService.isAdmin();
+  },
+
+  // Kiểm tra quyền truy cập dựa trên role
+  hasRoleAccess: (requiredRole: 'admin' | 'staff') => {
+    const userRole = accountService.getUserRole();
+    if (requiredRole === 'admin') {
+      return userRole === 'admin';
     }
+    return userRole === 'staff' || userRole === 'admin'; // Admin có thể truy cập staff pages
   }
 };
 
