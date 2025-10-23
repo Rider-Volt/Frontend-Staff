@@ -48,7 +48,7 @@ const Sidebar = () => {
   return (
     <div className="flex h-full flex-col bg-sidebar">
       <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-        <h1 className="text-xl font-bold text-sidebar-foreground">EV Station</h1>
+        <h1 className="text-xl font-bold text-sidebar-foreground">EV Station Staff</h1>
       </div>
       <nav className="flex-1 space-y-1 px-3 py-4">
         {navigation.map((item) => {
