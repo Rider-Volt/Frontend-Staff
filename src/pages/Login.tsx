@@ -1,18 +1,18 @@
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import accountService from '@/services/accountService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Car, Zap, Shield, CheckCircle, Eye, EyeOff, User, Lock } from 'lucide-react';
+import { Loader2, Car, Zap, Shield, CheckCircle, MapPin, Clock, Users, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -24,11 +24,14 @@ const Login = () => {
       return;
     }
 
-    const success = await login(username, password);
-    if (success) {
+    setIsLoading(true);
+    try {
+      await accountService.login(username, password);
       navigate('/');
-    } else {
-      setError('Tên đăng nhập hoặc mật khẩu không đúng');
+    } catch (error: any) {
+      setError(error.message || 'Đăng nhập thất bại');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -75,7 +78,7 @@ const Login = () => {
                       Tên đăng nhập
                     </Label>
                     <div className="relative mt-2">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
                         id="username"
                         type="text"
@@ -93,7 +96,7 @@ const Login = () => {
                       Mật khẩu
                     </Label>
                     <div className="relative mt-2">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <Input
                         id="password"
                         type={showPassword ? "text" : "password"}

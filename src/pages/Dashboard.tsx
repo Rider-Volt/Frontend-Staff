@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Battery, Clock, AlertCircle, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import heroImage from "@/assets/hero-station.jpg";
+import accountService from "@/services/accountService";
 
 const mockVehicles = [
   { id: "1", name: "VinFast Klara S", status: "available" as const, batteryLevel: 95, location: "Khu A" },
@@ -16,6 +17,10 @@ const mockVehicles = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  
+  // Lấy tên user hiện tại từ database
+  const user = accountService.getCurrentUser();
+  const userName = user?.name || user?.userName || 'Guest';
 
   return (
     <Layout>
@@ -30,7 +35,9 @@ const Dashboard = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/80 to-primary/40" />
           <div className="absolute inset-0 flex items-center px-8">
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">Chào mừng trở lại!</h1>
+              <h1 className="text-4xl font-bold text-white mb-2">
+                Chào mừng trở lại, {userName}!
+              </h1>
               <p className="text-white/90 text-lg">Quản lý điểm thuê xe điện hiệu quả</p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/AuthContext";
+import accountService from "@/services/accountService";
 import { 
   LayoutDashboard, 
   Car, 
@@ -32,7 +32,18 @@ const navigation = [
 
 const Sidebar = () => {
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  
+  // Lấy thông tin user từ localStorage
+  const user = accountService.getCurrentUser();
+  const displayName = user?.name || user?.userName || 'Guest';
+  const displayRole = user?.userName || 'staff';
+  
+  // Hàm xử lý đăng xuất
+  const handleLogout = () => {
+    accountService.logout();
+    navigate('/login');
+  };
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
@@ -69,15 +80,16 @@ const Sidebar = () => {
               <User className="h-4 w-4 text-sidebar-accent-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium text-sidebar-foreground">{user?.name}</p>
-              <p className="text-xs text-sidebar-foreground/70 capitalize">{user?.role}</p>
+              <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
+              <p className="text-xs text-sidebar-foreground/70 capitalize">{displayRole}</p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            onClick={logout}
+            onClick={handleLogout}
             className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent/50"
+            title="Đăng xuất"
           >
             <LogOut className="h-4 w-4" />
           </Button>
