@@ -8,38 +8,50 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Car, Zap, Shield, CheckCircle, MapPin, Clock, Users, Eye, EyeOff } from 'lucide-react';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+  // Các state để quản lý form đăng nhập
+  const [username, setUsername] = useState(''); // Tên đăng nhập
+  const [password, setPassword] = useState(''); // Mật khẩu
+  const [showPassword, setShowPassword] = useState(false); // Hiển thị/ẩn mật khẩu
+  const [error, setError] = useState(''); // Thông báo lỗi
+  const [isLoading, setIsLoading] = useState(false); // Trạng thái loading
+  const navigate = useNavigate(); // Hook để điều hướng trang
 
+  // Hàm xử lý khi submit form đăng nhập
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
+    e.preventDefault(); // Ngăn chặn reload trang
+    setError(''); // Xóa lỗi cũ
     
+    // Kiểm tra validation - phải nhập đầy đủ thông tin
     if (!username || !password) {
       setError('Vui lòng nhập đầy đủ thông tin');
       return;
     }
 
-    setIsLoading(true);
+    setIsLoading(true); // Bắt đầu loading
     try {
-      await accountService.login(username, password);
-      navigate('/');
+      // Sử dụng smart login để tự động phát hiện role (admin hoặc staff)
+      await accountService.smartLogin(username, password);
+      
+      // Kiểm tra role và chuyển hướng phù hợp
+      const userRole = accountService.getUserRole();
+      if (userRole === 'admin') {
+        navigate('/admin'); // Chuyển đến admin dashboard
+      } else {
+        navigate('/'); // Chuyển đến staff dashboard
+      }
     } catch (error: any) {
+      // Hiển thị lỗi nếu đăng nhập thất bại
       setError(error.message || 'Đăng nhập thất bại');
     } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Kết thúc loading
     }
   };
 
   return (
     <div className="min-h-screen flex">
-      {/* Left Side - Login Form */}
+      {/* Bên trái - Form đăng nhập */}
       <div className="flex-1 bg-slate-900 relative overflow-hidden">
-        {/* Decorative circles */}
+        {/* Các hình tròn trang trí tạo hiệu ứng background */}
         <div className="absolute top-20 left-20 w-32 h-32 bg-emerald-500/20 rounded-full blur-xl"></div>
         <div className="absolute top-40 right-32 w-24 h-24 bg-emerald-400/30 rounded-full blur-lg"></div>
         <div className="absolute bottom-32 left-32 w-40 h-40 bg-emerald-600/20 rounded-full blur-2xl"></div>
@@ -47,7 +59,7 @@ const Login = () => {
         
         <div className="relative z-10 flex items-center justify-center h-full p-8">
           <div className="w-full max-w-md">
-            {/* Logo */}
+            {/* Logo và tên hệ thống */}
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
                 <Car className="w-6 h-6 text-white" />
@@ -58,11 +70,11 @@ const Login = () => {
               </div>
             </div>
 
-            {/* Login Form */}
+            {/* Form đăng nhập */}
             <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-2">Đăng nhập</h2>
-                <p className="text-slate-400 text-sm">Nhân viên, Quản lý EV Station</p>
+                <p className="text-slate-400 text-sm">Nhân viên & Quản lý EV Station</p>
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -142,9 +154,9 @@ const Login = () => {
         </div>
       </div>
 
-      {/* Right Side - Promotional Content */}
+      {/* Bên phải - Nội dung giới thiệu hệ thống */}
       <div className="flex-1 bg-slate-50 relative overflow-hidden">
-        {/* Decorative circles */}
+        {/* Các hình tròn trang trí cho phần bên phải */}
         <div className="absolute top-16 right-16 w-40 h-40 bg-emerald-500/20 rounded-full blur-2xl"></div>
         <div className="absolute top-32 left-20 w-32 h-32 bg-emerald-400/30 rounded-full blur-xl"></div>
         <div className="absolute bottom-24 right-32 w-36 h-36 bg-emerald-600/25 rounded-full blur-2xl"></div>
@@ -152,19 +164,19 @@ const Login = () => {
         
         <div className="relative z-10 flex flex-col justify-center h-full p-12">
           <div className="max-w-lg">
-            {/* Main Title */}
+            {/* Tiêu đề chính */}
             <div className="mb-8">
               <h1 className="text-6xl font-bold text-slate-900 mb-4">EV STATION</h1>
               <p className="text-2xl text-emerald-600 font-semibold">Electric Portal</p>
             </div>
 
-            {/* Description */}
+            {/* Mô tả về hệ thống */}
             <p className="text-slate-600 text-lg leading-relaxed mb-8">
               Hệ thống quản lý cho thuê xe điện chuyên nghiệp, 
               Góp phần xây dựng môi trường giao thông xanh và bền vững.
             </p>
 
-            {/* Features */}
+            {/* Danh sách các tính năng chính */}
             <div className="space-y-4">
               <div className="flex items-center gap-3">
                 <div className="w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
@@ -193,7 +205,7 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Bottom logo */}
+          {/* Logo ở góc dưới bên phải */}
           <div className="absolute bottom-8 right-8">
             <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center">
               <Zap className="w-8 h-8 text-white" />
