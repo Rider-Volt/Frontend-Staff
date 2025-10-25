@@ -27,7 +27,7 @@ const navigation = [
   { name: "Giao/Nhận xe", href: "/handover", icon: ClipboardCheck },
   { name: "Thanh toán", href: "/payment", icon: CreditCard },
   { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
-  { name: 'Quản lý đơn thuê', href: '/StationStaff/orders', icon: Calendar },
+  { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
 ];
 
 const Sidebar = () => {
