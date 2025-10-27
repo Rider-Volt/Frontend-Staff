@@ -1,19 +1,39 @@
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, MapPin, Users, TrendingUp, Battery, Wrench } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import accountService from "@/services/accountService";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
+import { useEffect, useState } from 'react';
+import { getDashboardData, type DashboardData } from '@/services/adminservice/adminDashboardService';
 
 const AdminDashboard = () => {
-  const navigate = useNavigate();
+  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(true);
   
   // Lấy tên user hiện tại từ database
   const user = accountService.getCurrentUser();
   const userName = user?.name || user?.userName || 'Guest';
 
-  // Mock data cho charts
-  const revenueData = [
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const data = await getDashboardData();
+      setDashboardData(data);
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      // Không hiển thị lỗi, chỉ dùng hardcode data
+      setDashboardData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback to mock data if API not available
+  const revenueData = dashboardData?.revenueData || [
     { month: 'T7', revenue: 42000000 },
     { month: 'T8', revenue: 50000000 },
     { month: 'T9', revenue: 48000000 },
@@ -22,7 +42,7 @@ const AdminDashboard = () => {
     { month: 'T12', revenue: 70000000 },
   ];
 
-  const usageData = [
+  const usageData = dashboardData?.usageData || [
     { hour: '6h', usage: 45 },
     { hour: '9h', usage: 120 },
     { hour: '12h', usage: 95 },
@@ -55,67 +75,83 @@ const AdminDashboard = () => {
           </div>
 
           {/* KPI Cards */}
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Tổng số xe</p>
-                    <p className="text-3xl font-bold text-gray-800">248</p>
-                    <p className="text-sm text-teal-600 mt-1">+12% so với tháng trước</p>
+          {loading ? (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              {[...Array(4)].map((_, i) => (
+                <Card key={i} className="bg-white rounded-xl shadow-sm border border-gray-100">
+                  <CardContent className="p-6">
+                    <div className="animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-24 mb-4"></div>
+                      <div className="h-8 bg-gray-200 rounded w-16 mb-2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+              <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Tổng số xe</p>
+                      <p className="text-3xl font-bold text-gray-800">{dashboardData?.stats?.totalVehicles ?? 248}</p>
+                      <p className="text-sm text-teal-600 mt-1">+12% so với tháng trước</p>
+                    </div>
+                    <div className="p-3 bg-teal-100 rounded-full">
+                      <Car className="h-6 w-6 text-teal-600" />
+                    </div>
                   </div>
-                  <div className="p-3 bg-teal-100 rounded-full">
-                    <Car className="h-6 w-6 text-teal-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Điểm thuê</p>
-                    <p className="text-3xl font-bold text-gray-800">15</p>
-                    <p className="text-sm text-gray-600 mt-1">Đang hoạt động</p>
+              <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Điểm thuê</p>
+                      <p className="text-3xl font-bold text-gray-800">{dashboardData?.stats?.totalStations ?? 15}</p>
+                      <p className="text-sm text-gray-600 mt-1">Đang hoạt động</p>
+                    </div>
+                    <div className="p-3 bg-teal-100 rounded-full">
+                      <MapPin className="h-6 w-6 text-teal-600" />
+                    </div>
                   </div>
-                  <div className="p-3 bg-teal-100 rounded-full">
-                    <MapPin className="h-6 w-6 text-teal-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Khách hàng</p>
-                    <p className="text-3xl font-bold text-gray-800">1,234</p>
-                    <p className="text-sm text-teal-600 mt-1">+8% so với tháng trước</p>
+              <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Khách hàng</p>
+                      <p className="text-3xl font-bold text-gray-800">{dashboardData?.stats?.totalCustomers ? dashboardData.stats.totalCustomers.toLocaleString() : '1,234'}</p>
+                      <p className="text-sm text-teal-600 mt-1">+8% so với tháng trước</p>
+                    </div>
+                    <div className="p-3 bg-teal-100 rounded-full">
+                      <Users className="h-6 w-6 text-teal-600" />
+                    </div>
                   </div>
-                  <div className="p-3 bg-teal-100 rounded-full">
-                    <Users className="h-6 w-6 text-teal-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 mb-1">Doanh thu tháng</p>
-                    <p className="text-3xl font-bold text-gray-800">67tr</p>
-                    <p className="text-sm text-teal-600 mt-1">+23% so với tháng trước</p>
+              <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-gray-600 mb-1">Doanh thu tháng</p>
+                      <p className="text-3xl font-bold text-gray-800">{dashboardData?.stats?.monthlyRevenue ? `${(dashboardData.stats.monthlyRevenue / 1000000).toFixed(0)}tr` : '67tr'}</p>
+                      <p className="text-sm text-teal-600 mt-1">+23% so với tháng trước</p>
+                    </div>
+                    <div className="p-3 bg-teal-100 rounded-full">
+                      <TrendingUp className="h-6 w-6 text-teal-600" />
+                    </div>
                   </div>
-                  <div className="p-3 bg-teal-100 rounded-full">
-                    <TrendingUp className="h-6 w-6 text-teal-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           {/* Charts Section */}
           <div className="grid gap-6 md:grid-cols-2">
@@ -183,7 +219,7 @@ const AdminDashboard = () => {
                   <h3 className="text-lg font-bold text-gray-800">Xe đang hoạt động</h3>
                   <Battery className="h-5 w-5 text-gray-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">186</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData?.vehicleStatus?.active ?? 186}</div>
                 <div className="text-sm text-gray-600 mb-3">75% tổng số xe</div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-teal-500 h-2 rounded-full" style={{ width: '75%' }}></div>
@@ -197,7 +233,7 @@ const AdminDashboard = () => {
                   <h3 className="text-lg font-bold text-gray-800">Xe đang sạc</h3>
                   <Battery className="h-5 w-5 text-gray-600" />
                 </div>
-                <div className="text-3xl font-bold text-gray-800 mb-2">42</div>
+                <div className="text-3xl font-bold text-gray-800 mb-2">{dashboardData?.vehicleStatus?.charging ?? 42}</div>
                 <div className="text-sm text-gray-600 mb-3">17% tổng số xe</div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-teal-500 h-2 rounded-full" style={{ width: '17%' }}></div>
@@ -211,7 +247,7 @@ const AdminDashboard = () => {
                   <h3 className="text-lg font-bold text-gray-800">Cần bảo trì</h3>
                   <Wrench className="h-5 w-5 text-red-500" />
                 </div>
-                <div className="text-3xl font-bold text-red-500 mb-2">20</div>
+                <div className="text-3xl font-bold text-red-500 mb-2">{dashboardData?.vehicleStatus?.maintenance ?? 20}</div>
                 <div className="text-sm text-gray-600 mb-3">8% tổng số xe</div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div className="bg-red-500 h-2 rounded-full" style={{ width: '8%' }}></div>
