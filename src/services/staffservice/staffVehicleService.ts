@@ -81,11 +81,17 @@ export async function updateVehicleStatus(vehicleId: number, status: string): Pr
     status: status
   };
   
+  console.log('Staff updating vehicle status - ID:', vehicleId);
+  console.log('Staff update data:', JSON.stringify(updateData, null, 2));
+  console.log('Staff request URL:', `${API_BASE}/staff/vehicles/${vehicleId}/status`);
+  
   const resp = await fetch(`${API_BASE}/staff/vehicles/${vehicleId}/status`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(updateData),
   });
+  
+  console.log('Staff update response status:', resp.status);
   
   if (!resp.ok) {
     if (resp.status === 401 || resp.status === 403) {
@@ -98,18 +104,21 @@ export async function updateVehicleStatus(vehicleId: number, status: string): Pr
     let errorMessage = 'Failed to update vehicle status';
     try {
       const errorData = await resp.json();
-      console.error('Error response:', errorData);
+      console.error('Staff error response:', errorData);
       errorMessage = errorData.message || errorData.error || errorMessage;
     } catch {
       const text = await resp.text().catch(() => resp.statusText);
-      console.error('Failed to update vehicle status:', text);
+      console.error('Staff failed to update vehicle status:', text);
       errorMessage = text || errorMessage;
     }
     
     throw new Error(errorMessage);
   }
   
-  return (await resp.json()) as StaffVehicle;
+  const updated = await resp.json();
+  console.log('Staff updated vehicle response:', updated);
+  
+  return updated as StaffVehicle;
 }
 
 // Helper function to get status badge info

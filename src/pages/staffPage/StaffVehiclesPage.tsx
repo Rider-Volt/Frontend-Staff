@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, RefreshCw, AlertCircle, Search, Plus, Battery, MapPin, Wrench } from "lucide-react";
+import { Car, RefreshCw, AlertCircle, Search, Battery, MapPin, Wrench, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getStaffVehicles, 
@@ -15,6 +15,7 @@ import {
   getVehicleStatusInfo 
 } from "@/services/staffservice/staffVehicleService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 const formatCurrency = (v: number) => `${v.toLocaleString()}đ/ngày`;
 
@@ -25,6 +26,8 @@ const StaffVehiclesPage = () => {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingVehicle, setEditingVehicle] = useState<StaffVehicle | null>(null);
 
   const fetchVehicles = async () => {
     setLoading(true);
@@ -87,6 +90,11 @@ const StaffVehiclesPage = () => {
         return newSet;
       });
     }
+  };
+
+  const handleEditVehicle = (vehicle: StaffVehicle) => {
+    setEditingVehicle(vehicle);
+    setIsEditDialogOpen(true);
   };
 
   // Calculate statistics
@@ -261,21 +269,15 @@ const StaffVehiclesPage = () => {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <Select 
-                                value={vehicle.status} 
-                                onValueChange={(value) => handleStatusUpdate(vehicle.vehicleId, value)}
-                                disabled={isUpdating}
-                              >
-                                <SelectTrigger className="w-[140px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
-                                  <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditVehicle(vehicle)}
+                              disabled={isUpdating}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Cập nhật trạng thái
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -286,6 +288,64 @@ const StaffVehiclesPage = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Dialog Cập Nhật Trạng Thái Xe */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Cập Nhật Trạng Thái Xe</DialogTitle>
+            </DialogHeader>
+            {editingVehicle && (
+              <div className="space-y-4">
+                {/* Hiển thị thông tin xe */}
+                <div className="text-center">
+                  <p className="text-sm text-gray-600">Xe #{editingVehicle.vehicleId}</p>
+                  <p className="font-medium">{editingVehicle.model}</p>
+                  <p className="text-sm text-gray-500">{editingVehicle.licensePlate}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Trạng thái hiện tại</label>
+                  <div className="mt-1">
+                    <Badge className={getVehicleStatusInfo(editingVehicle.status).className}>
+                      {getVehicleStatusInfo(editingVehicle.status).text}
+                    </Badge>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium">Chọn trạng thái mới <span className="text-red-500">*</span></label>
+                  <Select 
+                    value={editingVehicle.status} 
+                    onValueChange={(value) => setEditingVehicle({...editingVehicle, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+                      <SelectItem value="RENTED">Đang thuê</SelectItem>
+                      <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex justify-end space-x-2">
+                  <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Hủy
+                  </Button>
+                  <Button onClick={() => {
+                    // Cập nhật trạng thái xe
+                    handleStatusUpdate(editingVehicle.vehicleId, editingVehicle.status);
+                    setIsEditDialogOpen(false);
+                  }}>
+                    Cập nhật
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </StaffLayout>
   );
