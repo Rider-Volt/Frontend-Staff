@@ -58,7 +58,7 @@ const Login = () => {
         <div className="absolute bottom-20 right-20 w-28 h-28 bg-emerald-500/25 rounded-full blur-xl"></div>
         
         <div className="relative z-10 flex items-center justify-center h-full p-8">
-          <div className="w-full max-w-md">
+          <div className="w-full max-w-xl">
             {/* Logo và tên hệ thống */}
             <div className="flex items-center gap-3 mb-8">
               <div className="w-12 h-12 bg-emerald-500 rounded-xl flex items-center justify-center">
@@ -71,20 +71,20 @@ const Login = () => {
             </div>
 
             {/* Form đăng nhập */}
-            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50">
-              <div className="mb-8">
-                <h2 className="text-2xl font-bold text-white mb-2">Đăng nhập</h2>
-                <p className="text-slate-400 text-sm">Nhân viên & Quản lý EV Station</p>
+            <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl p-12 border border-slate-700/50 w-[600px] aspect-square">
+              <div className="mb-10">
+                <h2 className="text-3xl font-bold text-white mb-3">Đăng nhập</h2>
+                <p className="text-slate-400 text-base">Nhân viên & Quản lý EV Station</p>
               </div>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-8">
                 {error && (
                   <Alert variant="destructive" className="bg-red-500/10 border-red-500/20">
                     <AlertDescription className="text-red-300">{error}</AlertDescription>
                   </Alert>
                 )}
 
-                <div className="space-y-4">
+                <div className="space-y-5">
                   <div>
                     <Label htmlFor="username" className="text-slate-300 text-sm font-medium">
                       Tên đăng nhập
@@ -98,7 +98,7 @@ const Login = () => {
                         onChange={(e) => setUsername(e.target.value)}
                         placeholder="Nhập tên đăng nhập"
                         disabled={isLoading}
-                        className="pl-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
+                        className="pl-12 h-14 bg-slate-700/50 border-slate-600 text-white text-lg placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
                       />
                     </div>
                   </div>
@@ -116,7 +116,7 @@ const Login = () => {
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Nhập mật khẩu"
                         disabled={isLoading}
-                        className="pl-10 pr-10 bg-slate-700/50 border-slate-600 text-white placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
+                        className="pl-12 pr-12 h-14 bg-slate-700/50 border-slate-600 text-white text-lg placeholder:text-slate-400 focus:border-emerald-500 focus:ring-emerald-500/20"
                       />
                       <button
                         type="button"
@@ -136,7 +136,7 @@ const Login = () => {
 
                 <Button
                   type="submit"
-                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-3 rounded-xl transition-colors"
+                  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium py-5 h-16 text-xl rounded-xl transition-colors"
                   disabled={isLoading}
                 >
                   {isLoading ? (

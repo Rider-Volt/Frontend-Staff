@@ -131,11 +131,15 @@ export async function createStation(data: CreateStationRequest): Promise<Station
 
 // Cập nhật thông tin trạm
 export async function updateStation(stationId: number, data: UpdateStationRequest): Promise<Station> {
+  console.log('Updating station with data:', JSON.stringify(data, null, 2));
+  
   const resp = await fetch(`${API_BASE}/admin/stations/${stationId}`, {
     method: "PUT",
     headers: authHeaders(),
     body: JSON.stringify(data),
   });
+  
+  console.log('Response status:', resp.status);
   
   if (!resp.ok) {
     if (resp.status === 401 || resp.status === 403) {
@@ -144,8 +148,31 @@ export async function updateStation(stationId: number, data: UpdateStationReques
     if (resp.status === 404) {
       throw new Error("Không tìm thấy trạm để cập nhật.");
     }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to update station (${resp.status})`);
+    
+    // Try to get detailed error from response
+    let errorMessage = 'Validation error';
+    try {
+      const errorData = await resp.json();
+      console.error('Error response:', errorData);
+      
+      // Check if there are validation errors
+      if (errorData.details || errorData.errors) {
+        const details = errorData.details || errorData.errors;
+        if (Array.isArray(details)) {
+          errorMessage = details.map((d: any) => d.message || d.field || d).join(', ');
+        } else if (typeof details === 'string') {
+          errorMessage = details;
+        }
+      } else if (errorData.message) {
+        errorMessage = errorData.message;
+      }
+    } catch {
+      const text = await resp.text().catch(() => resp.statusText);
+      console.error('Failed to update station - Full error:', text);
+      errorMessage = text || `Failed to update station (${resp.status})`;
+    }
+    
+    throw new Error(errorMessage);
   }
   
   return (await resp.json()) as Station;

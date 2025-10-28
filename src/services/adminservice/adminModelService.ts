@@ -121,7 +121,15 @@ export async function createModel(data: CreateModelRequest): Promise<Model> {
     try {
       const errorData = await resp.json();
       console.error('Error response:', errorData);
-      errorMessage = errorData.message || errorData.error || errorMessage;
+      
+      // Handle specific backend validation errors
+      if (errorData.message && errorData.message.includes('HV000030')) {
+        errorMessage = 'Lỗi backend: Enum ModelType không thể validate với @NotBlank. Vui lòng liên hệ admin để sửa lỗi backend.';
+      } else if (errorData.message && errorData.message.includes('jakarta.validation')) {
+        errorMessage = 'Lỗi validation backend: ' + errorData.message;
+      } else {
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      }
     } catch {
       const text = await resp.text().catch(() => resp.statusText);
       console.error('Failed to create model:', text);
@@ -149,8 +157,27 @@ export async function updateModel(modelId: number, data: UpdateModelRequest): Pr
     if (resp.status === 404) {
       throw new Error("Không tìm thấy model để cập nhật.");
     }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to update model (${resp.status})`);
+    
+    let errorMessage = 'Failed to update model';
+    try {
+      const errorData = await resp.json();
+      console.error('Error response:', errorData);
+      
+      // Handle specific backend validation errors
+      if (errorData.message && errorData.message.includes('HV000030')) {
+        errorMessage = 'Lỗi backend: Enum ModelType không thể validate với @NotBlank. Vui lòng liên hệ admin để sửa lỗi backend.';
+      } else if (errorData.message && errorData.message.includes('jakarta.validation')) {
+        errorMessage = 'Lỗi validation backend: ' + errorData.message;
+      } else {
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      }
+    } catch {
+      const text = await resp.text().catch(() => resp.statusText);
+      console.error('Failed to update model:', text);
+      errorMessage = text || errorMessage;
+    }
+    
+    throw new Error(errorMessage);
   }
   
   return (await resp.json()) as Model;

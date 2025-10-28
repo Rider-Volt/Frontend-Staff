@@ -2,10 +2,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import AdminRevenue from '@/components/admin/AdminRevenue';
+import AdminPeakHours from '@/components/admin/AdminPeakHours';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
-const AdminRevenuePage = () => {
+const AdminPeakHoursPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -14,8 +14,8 @@ const AdminRevenuePage = () => {
         <div className="bg-white shadow-sm p-6 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Báo Cáo Doanh Thu</h1>
-              <p className="text-gray-600">Thống kê và phân tích doanh thu thuê xe điện</p>
+              <h1 className="text-3xl font-bold text-gray-800">Phân Tích Giờ Cao Điểm</h1>
+              <p className="text-gray-600">Phân tích mẫu đặt xe và đề xuất tối ưu hóa</p>
             </div>
             <div className="flex space-x-2">
               <Button 
@@ -38,12 +38,13 @@ const AdminRevenuePage = () => {
           </div>
         </div>
 
-        <div className="px-6 pb-10 max-w-7xl mx-auto">
-          <AdminRevenue />
+        <div className="px-6 pb-10">
+          <AdminPeakHours />
         </div>
       </div>
     </AdminLayout>
   );
 };
 
-export default AdminRevenuePage;
+export default AdminPeakHoursPage;
+

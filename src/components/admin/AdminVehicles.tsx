@@ -317,7 +317,7 @@ const AdminVehicles = () => {
               Thêm Xe Mới
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Thêm Xe Mới</DialogTitle>
             </DialogHeader>
@@ -404,7 +404,7 @@ const AdminVehicles = () => {
 
          {/* Dialog Xem Chi Tiết Xe */}
          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-           <DialogContent className="max-w-lg">
+           <DialogContent className="max-w-xl">
              <DialogHeader>
                <DialogTitle>Chi Tiết Xe</DialogTitle>
              </DialogHeader>
@@ -481,7 +481,7 @@ const AdminVehicles = () => {
 
          {/* Dialog Chỉnh Sửa Xe */}
          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-           <DialogContent className="max-w-md">
+           <DialogContent className="max-w-lg">
              <DialogHeader>
                <DialogTitle>Chỉnh Sửa Xe</DialogTitle>
              </DialogHeader>
@@ -687,7 +687,7 @@ const AdminVehicles = () => {
                 <TableHead>Trạm</TableHead>
                 <TableHead>Giá/ngày</TableHead>
                 <TableHead>Trạng Thái</TableHead>
-                <TableHead>Hành động</TableHead>
+                <TableHead className="text-right">Hành động</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>

@@ -47,10 +47,10 @@ const Sidebar = () => {
 
   return (
     <div className="flex h-full flex-col bg-sidebar">
-      <div className="flex h-16 items-center border-b border-sidebar-border px-6">
-        <h1 className="text-xl font-bold text-sidebar-foreground">EV Station Staff</h1>
+      <div className="flex h-16 items-center border-b border-sidebar-border px-8">
+        <h1 className="text-2xl font-bold text-sidebar-foreground">EV Station Staff</h1>
       </div>
-      <nav className="flex-1 space-y-1 px-3 py-4">
+      <nav className="flex-1 space-y-1 px-6 py-4">
         {navigation.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname === item.href;
@@ -59,13 +59,13 @@ const Sidebar = () => {
               key={item.name}
               to={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "flex items-center gap-4 rounded-lg px-4 py-3 text-base font-medium transition-colors",
                 isActive
                   ? "bg-sidebar-accent text-sidebar-accent-foreground"
                   : "text-sidebar-foreground hover:bg-sidebar-accent/50 hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="h-5 w-5" />
+              <Icon className="h-6 w-6" />
               {item.name}
             </Link>
           );
@@ -73,15 +73,15 @@ const Sidebar = () => {
       </nav>
       
       {/* User info and logout */}
-      <div className="border-t border-sidebar-border p-4">
+      <div className="border-t border-sidebar-border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center">
               <User className="h-4 w-4 text-sidebar-accent-foreground" />
             </div>
             <div>
-              <p className="text-sm font-medium text-sidebar-foreground">{displayName}</p>
-              <p className="text-xs text-sidebar-foreground/70 capitalize">{displayRole}</p>
+              <p className="text-base font-medium text-sidebar-foreground">{displayName}</p>
+              <p className="text-sm text-sidebar-foreground/70 capitalize">{displayRole}</p>
             </div>
           </div>
           <Button
@@ -103,7 +103,7 @@ export const StaffLayout = ({ children }: StaffLayoutProps) => {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden w-64 border-r border-sidebar-border md:block">
+      <aside className="hidden w-80 border-r border-sidebar-border md:block">
         <Sidebar />
       </aside>
 
@@ -118,7 +118,7 @@ export const StaffLayout = ({ children }: StaffLayoutProps) => {
             <Menu className="h-6 w-6" />
           </Button>
         </SheetTrigger>
-        <SheetContent side="left" className="w-64 p-0">
+        <SheetContent side="left" className="w-80 p-0">
           <Sidebar />
         </SheetContent>
       </Sheet>

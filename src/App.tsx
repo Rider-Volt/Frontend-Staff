@@ -16,7 +16,8 @@ import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
 import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
 import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
-import AdminRevenuePage from "./pages/adminPage/AdminRevenuePage";
+import AdminPeakHoursPage from "./pages/adminPage/AdminPeakHoursPage";
+import AdminAIForecastPage from "./pages/adminPage/AdminAIForecastPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -121,14 +122,14 @@ const App = () => (
               <AdminModelsPage />
             </ProtectedRoute>
           } />
-          <Route path="/admin/reports" element={
+          <Route path="/admin/reports/peak-hours" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminRevenuePage />
+              <AdminPeakHoursPage />
             </ProtectedRoute>
           } />
-          <Route path="/admin/adminReports" element={
+          <Route path="/admin/reports/ai-forecast" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminRevenuePage />
+              <AdminAIForecastPage />
             </ProtectedRoute>
           } />
           

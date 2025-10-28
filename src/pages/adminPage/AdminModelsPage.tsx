@@ -38,7 +38,7 @@ const AdminModelsPage = () => {
           </div>
         </div>
 
-        <div className="px-6 pb-10 max-w-7xl mx-auto">
+        <div className="px-6 pb-10">
           <AdminModels />
         </div>
       </div>

@@ -19,6 +19,7 @@ interface Station {
   name: string;
   address: string;
   staffId: number;
+  staffFullName: string;
   totalVehicles: number;
 }
 
@@ -44,6 +45,7 @@ const AdminStations = () => {
         name: s.name,
         address: s.address,
         staffId: s.staffId,
+        staffFullName: s.staffFullName || '',
         totalVehicles: s.totalVehicles,
       }));
       setStations(mappedData);
@@ -84,6 +86,7 @@ const AdminStations = () => {
         await updateStation(numericId, {
           name: s.name.trim(),
           address: s.address.trim(),
+          staffId: s.staffId && s.staffId > 0 ? s.staffId : null,
         });
         
         toast({
@@ -185,13 +188,14 @@ const AdminStations = () => {
                   <TableHead>Tên điểm</TableHead>
                   <TableHead>Địa chỉ</TableHead>
                   <TableHead>Số xe</TableHead>
+                  <TableHead>Nhân viên</TableHead>
                   <TableHead className="text-right">Hành động</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8">
+                    <TableCell colSpan={6} className="text-center py-8">
                       <div className="flex items-center justify-center">
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
                         <span className="ml-3 text-gray-600">Đang tải...</span>
@@ -200,7 +204,7 @@ const AdminStations = () => {
                   </TableRow>
                 ) : filtered.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={6} className="text-center py-8 text-gray-500">
                       Không có dữ liệu
                     </TableCell>
                   </TableRow>
@@ -211,6 +215,7 @@ const AdminStations = () => {
                       <TableCell>{s.name}</TableCell>
                       <TableCell className="text-gray-600">{s.address}</TableCell>
                       <TableCell className="font-medium">{s.totalVehicles}</TableCell>
+                      <TableCell className="text-sm text-gray-600">{s.staffFullName || 'Chưa gán'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
                           <Button variant="outline" size="sm" onClick={() => { setEditing(s); setOpen(true); }}>
@@ -245,7 +250,7 @@ interface StationFormModalProps {
 }
 
 const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
-  const defaultStation: Station = { id: '', name: '', address: '', staffId: 0, totalVehicles: 0 };
+  const defaultStation: Station = { id: '', name: '', address: '', staffId: 0, staffFullName: '', totalVehicles: 0 };
   
   const [form, setForm] = useState<Station>(
     editing || defaultStation
