@@ -15,7 +15,7 @@ const AdminVehiclesPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Quản Lý Xe</h1>
-              <p className="text-gray-600">Thêm, sửa, xóa và theo dõi trạng thái xe</p>
+              <p className="text-gray-600">Theo dõi trạng thái xe</p>
             </div>
             <div className="flex space-x-2">
               <Button 

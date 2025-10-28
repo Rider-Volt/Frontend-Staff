@@ -2,10 +2,10 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import AdminCustomers from '@/components/admin/AdminCustomers';
+import AdminModels from '@/components/admin/AdminModels';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
-const AdminCustomersPage = () => {
+const AdminModelsPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -14,8 +14,8 @@ const AdminCustomersPage = () => {
         <div className="bg-white shadow-sm p-6 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Khách Hàng</h1>
-              <p className="text-gray-600">Thông tin khách hàng</p>
+              <h1 className="text-3xl font-bold text-gray-800">Quản Lý Model</h1>
+              <p className="text-gray-600">Quản lý thông tin model xe</p>
             </div>
             <div className="flex space-x-2">
               <Button 
@@ -39,13 +39,11 @@ const AdminCustomersPage = () => {
         </div>
 
         <div className="px-6 pb-10 max-w-7xl mx-auto">
-          <AdminCustomers />
+          <AdminModels />
         </div>
       </div>
     </AdminLayout>
   );
 };
 
-export default AdminCustomersPage;
-
-
+export default AdminModelsPage;
