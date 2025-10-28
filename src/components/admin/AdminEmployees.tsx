@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,92 +36,67 @@ import {
   Eye,
   Mail,
   Phone,
-  MapPin
+  MapPin,
+  Loader2
 } from 'lucide-react';
-
-// Mock data cho employees
-const mockEmployees = [
-  {
-    id: "EMP001",
-    name: "Nguyễn Văn An",
-    email: "an.nguyen@evstation.com",
-    phone: "0901234567",
-    position: "Quản lý trạm",
-    station: "Trạm HCM",
-    status: "active",
-    joinDate: "2023-01-15",
-    salary: "15,000,000 VND"
-  },
-  {
-    id: "EMP002",
-    name: "Trần Thị Bình",
-    email: "binh.tran@evstation.com",
-    phone: "0901234568",
-    position: "Nhân viên giao xe",
-    station: "Trạm HCM",
-    status: "active",
-    joinDate: "2023-03-20",
-    salary: "8,000,000 VND"
-  },
-  {
-    id: "EMP003",
-    name: "Lê Văn Cường",
-    email: "cuong.le@evstation.com",
-    phone: "0901234569",
-    position: "Kỹ thuật viên",
-    station: "Trạm HN",
-    status: "inactive",
-    joinDate: "2022-11-10",
-    salary: "12,000,000 VND"
-  },
-  {
-    id: "EMP004",
-    name: "Phạm Thị Dung",
-    email: "dung.pham@evstation.com",
-    phone: "0901234570",
-    position: "Nhân viên thu ngân",
-    station: "Trạm HN",
-    status: "active",
-    joinDate: "2023-05-12",
-    salary: "7,500,000 VND"
-  }
-];
+import { getAllStaff, Staff } from '@/services/adminservice/adminEmployeeService';
 
 const AdminEmployees = () => {
-  const [employees, setEmployees] = useState(mockEmployees);
+  const [employees, setEmployees] = useState<Staff[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Load employees from API
+  useEffect(() => {
+    const loadEmployees = async () => {
+      try {
+        setLoading(true);
+        const data = await getAllStaff();
+        setEmployees(data);
+        console.log('Staff loaded:', data);
+      } catch (error) {
+        console.error('Error loading employees:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadEmployees();
+  }, []);
 
   // Filter employees based on search term
   const filteredEmployees = employees.filter(employee =>
-    employee.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    employee.id.toString().includes(searchTerm.toLowerCase()) ||
     employee.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.position.toLowerCase().includes(searchTerm.toLowerCase())
+    employee.phone.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Delete employee
-  const deleteEmployee = (employeeId: string) => {
+  const deleteEmployee = (employeeId: number) => {
     setEmployees(employees.filter(employee => employee.id !== employeeId));
   };
 
   // Toggle employee status
-  const toggleEmployeeStatus = (employeeId: string) => {
+  const toggleEmployeeStatus = (employeeId: number) => {
     setEmployees(employees.map(employee => 
       employee.id === employeeId 
-        ? { ...employee, status: employee.status === 'active' ? 'inactive' : 'active' }
+        ? { ...employee, status: employee.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE' }
         : employee
     ));
   };
 
   // Get status badge variant
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
+    switch (status?.toUpperCase()) {
+      case 'ACTIVE':
         return { variant: 'default' as const, className: 'bg-green-100 text-green-800', text: 'Hoạt động' };
-      case 'inactive':
-        return { variant: 'secondary' as const, className: 'bg-red-100 text-red-800', text: 'Tạm nghỉ' };
-      case 'suspended':
+      case 'INACTIVE':
+        return { variant: 'secondary' as const, className: 'bg-gray-100 text-gray-800', text: 'Tạm nghỉ' };
+      case 'VERIFIED':
+        return { variant: 'default' as const, className: 'bg-blue-100 text-blue-800', text: 'Đã xác minh' };
+      case 'SUSPENDED':
         return { variant: 'destructive' as const, className: 'bg-yellow-100 text-yellow-800', text: 'Tạm đình chỉ' };
       default:
         return { variant: 'secondary' as const, className: 'bg-gray-100 text-gray-800', text: 'Không xác định' };
@@ -173,16 +148,8 @@ const AdminEmployees = () => {
                 <Input placeholder="0901234567" />
               </div>
               <div>
-                <label className="text-sm font-medium">Vị trí</label>
-                <Input placeholder="Nhập vị trí công việc" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Trạm</label>
-                <Input placeholder="Chọn trạm" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Lương</label>
-                <Input placeholder="Ví dụ: 8,000,000 VND" />
+                <label className="text-sm font-medium">Username</label>
+                <Input placeholder="Nhập username" />
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -207,7 +174,7 @@ const AdminEmployees = () => {
           <CardContent>
             <div className="text-2xl font-bold">{employees.length}</div>
             <p className="text-xs text-muted-foreground">
-              +2 từ tháng trước
+              Tổng số nhân viên
             </p>
           </CardContent>
         </Card>
@@ -219,10 +186,10 @@ const AdminEmployees = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {employees.filter(e => e.status === 'active').length}
+              {employees.filter(e => e.status?.toUpperCase() === 'ACTIVE').length}
             </div>
             <p className="text-xs text-muted-foreground">
-              {Math.round((employees.filter(e => e.status === 'active').length / employees.length) * 100)}% tổng nhân viên
+              {employees.length > 0 ? Math.round((employees.filter(e => e.status?.toUpperCase() === 'ACTIVE').length / employees.length) * 100) : 0}% tổng nhân viên
             </p>
           </CardContent>
         </Card>
@@ -234,7 +201,7 @@ const AdminEmployees = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {employees.filter(e => e.status === 'inactive').length}
+              {employees.filter(e => e.status === 'INACTIVE').length}
             </div>
             <p className="text-xs text-muted-foreground">
               Không hoạt động
@@ -244,15 +211,15 @@ const AdminEmployees = () => {
         
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Trạm HCM</CardTitle>
+            <CardTitle className="text-sm font-medium">Đang Làm Việc</CardTitle>
             <MapPin className="h-4 w-4 text-blue-600" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {employees.filter(e => e.station === 'Trạm HCM').length}
+              {employees.length}
             </div>
             <p className="text-xs text-muted-foreground">
-              Nhân viên tại HCM
+              Tổng số nhân viên
             </p>
           </CardContent>
         </Card>
@@ -271,15 +238,30 @@ const AdminEmployees = () => {
                 <TableHead>Họ và Tên</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Số ĐT</TableHead>
-                <TableHead>Vị Trí</TableHead>
+                <TableHead>Vai Trò</TableHead>
                 <TableHead>Trạm</TableHead>
                 <TableHead>Trạng Thái</TableHead>
-                <TableHead>Ngày Vào</TableHead>
                 <TableHead className="text-right">Thao Tác</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredEmployees.map((employee) => {
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8">
+                    <div className="flex items-center justify-center">
+                      <Loader2 className="h-6 w-6 animate-spin text-green-600 mr-2" />
+                      <span className="text-gray-600">Đang tải danh sách nhân viên...</span>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : filteredEmployees.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    Không có dữ liệu
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredEmployees.map((employee) => {
                 const statusBadge = getStatusBadge(employee.status);
                 return (
                   <TableRow key={employee.id}>
@@ -298,12 +280,12 @@ const AdminEmployees = () => {
                       </div>
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {employee.position}
+                      {employee.role}
                     </TableCell>
                     <TableCell className="text-sm">
                       <div className="flex items-center space-x-1">
                         <MapPin className="h-3 w-3 text-gray-400" />
-                        <span>{employee.station}</span>
+                        <span>{employee.stationName || 'Chưa gán trạm'}</span>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -312,7 +294,7 @@ const AdminEmployees = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-gray-600">
-                      {employee.joinDate}
+                      N/A
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -333,7 +315,7 @@ const AdminEmployees = () => {
                           <DropdownMenuItem 
                             onClick={() => toggleEmployeeStatus(employee.id)}
                           >
-                            {employee.status === 'active' ? (
+                            {employee.status?.toUpperCase() === 'ACTIVE' ? (
                               <>
                                 <UserX className="mr-2 h-4 w-4" />
                                 Tạm nghỉ
@@ -357,7 +339,8 @@ const AdminEmployees = () => {
                     </TableCell>
                   </TableRow>
                 );
-              })}
+                })
+              )}
             </TableBody>
           </Table>
         </CardContent>

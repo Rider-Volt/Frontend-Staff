@@ -11,7 +11,8 @@ import {
   BarChart3,
   Menu,
   LogOut,
-  User
+  User,
+  PackageSearch
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -23,6 +24,7 @@ interface AdminLayoutProps {
 const menuItems = [
   { title: "Tổng quan", url: "/admin", icon: LayoutDashboard },
   { title: "Quản lý xe", url: "/admin/vehicles", icon: CarIcon },
+  { title: "Models xe", url: "/admin/models", icon: PackageSearch },
   { title: "Điểm thuê", url: "/admin/stations", icon: MapPin },
   { title: "Khách hàng", url: "/admin/adminCustomers", icon: Users },
   { title: "Nhân viên", url: "/admin/employees", icon: UserCog },
