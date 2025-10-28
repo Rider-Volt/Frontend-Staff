@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+import { StaffLayout } from "@/components/staff/StaffLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,13 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { DollarSign, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 
-const Payment = () => {
+const StaffPayment = () => {
   const handlePayment = () => {
     toast.success("Thanh toán thành công!");
   };
 
   return (
-    <Layout>
+    <StaffLayout>
       <div className="p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Thanh toán</h1>
@@ -148,8 +148,8 @@ const Payment = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </StaffLayout>
   );
 };
 
-export default Payment;
+export default StaffPayment;

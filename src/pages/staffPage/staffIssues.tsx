@@ -1,4 +1,4 @@
-import { Layout } from "@/components/Layout";
+import { StaffLayout } from "@/components/staff/StaffLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,13 +14,13 @@ const mockIssues = [
   { id: "3", vehicle: "Pega NewTech", issue: "Đèn trước không sáng", status: "pending", time: "1 ngày trước" },
 ];
 
-const Issues = () => {
+const StaffIssues = () => {
   const handleSubmit = () => {
     toast.success("Đã gửi báo cáo sự cố!");
   };
 
   return (
-    <Layout>
+    <StaffLayout>
       <div className="p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Báo cáo sự cố</h1>
@@ -123,8 +123,8 @@ const Issues = () => {
           </div>
         </div>
       </div>
-    </Layout>
+    </StaffLayout>
   );
 };
 
-export default Issues;
+export default StaffIssues;
