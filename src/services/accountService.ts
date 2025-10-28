@@ -1,6 +1,28 @@
 // URL cơ sở của API backend
 const API_BASE_URL = "https://backend.ridervolt.app/api";
 
+// Interface cho user data
+interface UserData {
+  userID: number;
+  userName: string;
+  name: string;
+  stationId?: number;
+  accessToken: string;
+  role: 'admin' | 'staff';
+}
+
+// Interface cho login response
+interface LoginResponse {
+  staffId?: number;
+  adminId?: number;
+  staffName?: string;
+  adminName?: string;
+  stationId?: number;
+  accessToken?: string;
+  token?: string;
+  role?: string;
+}
+
 // Hàm helper để thực hiện các request API
 const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -12,20 +34,33 @@ const apiRequest = async (endpoint: string, options: RequestInit = {}) => {
     ...options,
   };
 
-  const response = await fetch(url, config);
-  
-  // Xử lý lỗi nếu response không thành công
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw { response: { data: errorData } };
+  try {
+    const response = await fetch(url, config);
+    
+    // Xử lý lỗi nếu response không thành công
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // Nếu không parse được JSON, sử dụng status text
+      }
+      throw new Error(errorMessage);
+    }
+    
+    return { data: await response.json() };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Lỗi kết nối mạng');
   }
-  
-  return { data: await response.json() };
 };
 
 const accountService = {
   // Hàm đăng nhập cho nhân viên
-  login: async (email: string, password: string) => {
+  login: async (email: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await apiRequest("/staff/login", {
         method: "POST",
@@ -35,32 +70,33 @@ const accountService = {
         }),
       });
 
-      // Lưu thông tin user vào localStorage để sử dụng sau này
-      const { staffId, staffName, stationId, accessToken } = response.data;
-      const userData = {
+      const { staffId, staffName, stationId, accessToken } = response.data as LoginResponse;
+      
+      if (!staffId || !accessToken) {
+        throw new Error('Thông tin đăng nhập không hợp lệ');
+      }
+
+      const userData: UserData = {
         userID: staffId,
         userName: 'staff',
-        name: staffName, // Sử dụng staffName từ API response
+        name: staffName || 'Nhân viên',
         stationId: stationId,
         accessToken: accessToken,
         role: 'staff'
       };
 
       localStorage.setItem('userData', JSON.stringify(userData));
-      
-      // Log để debug (có thể xóa sau)
-      console.log('API Response:', response.data);
-      console.log('User data saved:', userData);
-      console.log('Display name will be:', userData.name || userData.userName || 'Guest');
+      localStorage.setItem('staff_token', accessToken);
 
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: "Đăng nhập thất bại" };
+      console.error('Staff login error:', error);
+      throw error instanceof Error ? error : new Error("Đăng nhập thất bại");
     }
   },
 
   // Hàm đăng nhập cho admin
-  adminLogin: async (email: string, password: string) => {
+  adminLogin: async (email: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await apiRequest("/admin/login", {
         method: "POST",
@@ -70,24 +106,28 @@ const accountService = {
         }),
       });
 
-      // Lưu thông tin admin vào localStorage
-      const { adminId, adminName, accessToken, role } = response.data;
-      const userData = {
+      const { adminId, adminName, accessToken, role, token } = response.data as LoginResponse;
+      const actualToken = accessToken || token;
+      
+      if (!adminId || !actualToken) {
+        throw new Error('Thông tin đăng nhập admin không hợp lệ');
+      }
+      
+      const userData: UserData = {
         userID: adminId,
         userName: 'admin',
-        name: adminName,
-        accessToken: accessToken,
-        role: role || 'admin'
+        name: adminName || 'Quản trị viên',
+        accessToken: actualToken,
+        role: 'admin'
       };
 
       localStorage.setItem('userData', JSON.stringify(userData));
-      
-      console.log('Admin API Response:', response.data);
-      console.log('Admin user data saved:', userData);
+      localStorage.setItem('admin_token', actualToken);
 
       return response.data;
     } catch (error) {
-      throw error.response?.data || { message: "Đăng nhập admin thất bại" };
+      console.error('Admin login error:', error);
+      throw error instanceof Error ? error : new Error("Đăng nhập admin thất bại");
     }
   },
 
@@ -109,87 +149,102 @@ const accountService = {
   // Hàm đăng xuất - xóa dữ liệu user khỏi localStorage
   logout: () => {
     localStorage.removeItem("userData");
+    localStorage.removeItem("staff_token");
+    localStorage.removeItem("admin_token");
   },
 
   // Lấy thông tin user hiện tại từ localStorage
-  getCurrentUser: () => {
-    const userData = localStorage.getItem("userData");
-    return userData ? JSON.parse(userData) : null;
+  getCurrentUser: (): UserData | null => {
+    try {
+      const userData = localStorage.getItem("userData");
+      return userData ? JSON.parse(userData) as UserData : null;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
   },
 
   // Lấy tên hiển thị của user hiện tại
-  getDisplayName: () => {
+  getDisplayName: (): string => {
     const user = accountService.getCurrentUser();
-    return user?.name || user?.userName || 'user name';
+    return user?.name || user?.userName || 'Người dùng';
   },
 
   // Lấy role hiển thị của user hiện tại
-  getDisplayRole: () => {
+  getDisplayRole: (): string => {
     const user = accountService.getCurrentUser();
-    return user?.role || user?.userName || 'staff';
+    return user?.role === 'admin' ? 'Quản trị viên' : 'Nhân viên';
   },
 
   // Lấy role thực tế của user
-  getUserRole: () => {
+  getUserRole: (): 'admin' | 'staff' => {
     const user = accountService.getCurrentUser();
     return user?.role || 'staff';
   },
 
   // Kiểm tra xem user có phải admin không
-  isAdmin: () => {
+  isAdmin: (): boolean => {
     const user = accountService.getCurrentUser();
-    return user?.role === 'admin' || user?.userName === 'admin';
+    return user?.role === 'admin';
   },
 
   // Kiểm tra xem user có phải staff không
-  isStaff: () => {
+  isStaff: (): boolean => {
     const user = accountService.getCurrentUser();
-    return user?.role === 'staff' || user?.userName === 'staff';
+    return user?.role === 'staff';
   },
 
   // Kiểm tra user đã đăng nhập chưa
-  isLoggedIn: () => {
+  isLoggedIn: (): boolean => {
     const userData = localStorage.getItem("userData");
     return !!userData;
   },
 
-  // Debug: In ra thông tin user hiện tại
-  debugUserInfo: () => {
+  // Lấy token hiện tại
+  getCurrentToken: (): string | null => {
     const user = accountService.getCurrentUser();
-    const rawData = localStorage.getItem('userData');
-    console.log('Raw localStorage data:', rawData);
-    console.log('Current user data:', user);
-    console.log('Display name:', user?.name || user?.userName || 'Guest');
-    console.log('Display role:', user?.userName || 'staff');
-    return user;
+    if (user?.role === 'admin') {
+      return localStorage.getItem('admin_token');
+    } else if (user?.role === 'staff') {
+      return localStorage.getItem('staff_token');
+    }
+    return null;
   },
 
-  // Test: Tạo dữ liệu user mẫu để test
-  createTestUser: () => {
-    const testUserData = {
-      userID: 1,
-      userName: 'staff',
-      name: 'Nguyễn Văn A', // staffName từ API sẽ được lưu vào trường name
-      stationId: 1,
-      accessToken: 'test-token'
-    };
-    localStorage.setItem('userData', JSON.stringify(testUserData));
-    console.log('Test user created:', testUserData);
-    return testUserData;
-  },
-
-  // Kiểm tra quyền admin của user hiện tại
-  hasAdminAccess: () => {
-    return accountService.isAdmin();
+  // Lấy station ID của staff
+  getStationId: (): number | null => {
+    const user = accountService.getCurrentUser();
+    return user?.stationId || null;
   },
 
   // Kiểm tra quyền truy cập dựa trên role
-  hasRoleAccess: (requiredRole: 'admin' | 'staff') => {
+  hasRoleAccess: (requiredRole: 'admin' | 'staff'): boolean => {
     const userRole = accountService.getUserRole();
     if (requiredRole === 'admin') {
       return userRole === 'admin';
     }
     return userRole === 'staff' || userRole === 'admin'; // Admin có thể truy cập staff pages
+  },
+
+  // Kiểm tra token có hợp lệ không
+  isTokenValid: (): boolean => {
+    const token = accountService.getCurrentToken();
+    return !!token && token.length > 0;
+  },
+
+  // Lấy headers cho API calls
+  getAuthHeaders: (): HeadersInit => {
+    const token = accountService.getCurrentToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+  },
+
+  // Refresh token (placeholder - cần implement khi có API)
+  refreshToken: async (): Promise<boolean> => {
+    // TODO: Implement refresh token logic
+    return false;
   }
 };
 

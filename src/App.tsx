@@ -6,8 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import StaffDashboard from "./components/staff/StaffDashboard";
 import Login from "./pages/Login";
 import StaffHandoverPage from "./pages/staffPage/StaffHandoverPage";
-import Payment from "./pages/Payment";
-import Issues from "./pages/Issues";
+import StaffPayment from "./pages/staffPage/StaffPayment";
+import StaffIssues from "./pages/staffPage/staffIssues";
 import StaffVehiclesPage from "./pages/staffPage/StaffVehiclesPage";
 import StaffStationOrdersPage from "./pages/staffPage/StaffStationOrdersPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
@@ -46,12 +46,12 @@ const App = () => (
           } />
           <Route path="/payment" element={
             <ProtectedRoute requiredRole="staff">
-              <Payment />
+              <StaffPayment />
             </ProtectedRoute>
           } />
           <Route path="/issues" element={
             <ProtectedRoute requiredRole="staff">
-              <Issues />
+              <StaffIssues />
             </ProtectedRoute>
           } />
           <Route path="/vehicles" element={
