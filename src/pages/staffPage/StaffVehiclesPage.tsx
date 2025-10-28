@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, RefreshCw, AlertCircle, Search, Battery, MapPin, Wrench, Edit } from "lucide-react";
+import { Car, RefreshCw, AlertCircle, Search, Battery, MapPin, Wrench, Edit, Pin } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getStaffVehicles, 
@@ -230,6 +230,7 @@ const StaffVehiclesPage = () => {
                       <TableHead>Model</TableHead>
                       <TableHead>Loại xe</TableHead>
                       <TableHead>Biển số</TableHead>
+                      <TableHead>Pin (%)</TableHead>
                       <TableHead>Trạm</TableHead>
                       <TableHead>Giá/ngày</TableHead>
                       <TableHead>Trạng thái</TableHead>
@@ -261,6 +262,12 @@ const StaffVehiclesPage = () => {
                           <TableCell>{vehicle.model}</TableCell>
                           <TableCell className="text-gray-600 capitalize">{vehicle.vehicleType || 'N/A'}</TableCell>
                           <TableCell>{vehicle.licensePlate}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <Pin className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium">{vehicle.currentPin ?? 'N/A'}%</span>
+                            </div>
+                          </TableCell>
                           <TableCell className="text-sm">{vehicle.stationName}</TableCell>
                           <TableCell className="font-semibold text-green-700">{formatCurrency(vehicle.pricePerDay)}</TableCell>
                           <TableCell>

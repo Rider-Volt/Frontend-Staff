@@ -14,6 +14,7 @@ export interface StaffVehicle {
   stationAddress: string;
   stationLatitude: number;
   stationLongitude: number;
+  currentPin: number;
 }
 
 export interface UpdateVehicleStatusRequest {

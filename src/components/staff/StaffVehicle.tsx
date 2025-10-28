@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Battery, MapPin, MoreVertical } from "lucide-react";
+import { Battery, MapPin, MoreVertical, Pin } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ interface StaffVehicleProps {
   status: "available" | "booked" | "rented" | "maintenance";
   batteryLevel: number;
   location: string;
+  currentPin?: number;
   onHandover?: () => void;
   onUpdateStatus?: () => void;
   onReport?: () => void;
@@ -32,6 +33,7 @@ export const StaffVehicle = ({
   status,
   batteryLevel,
   location,
+  currentPin,
   onHandover,
   onUpdateStatus,
   onReport,
@@ -72,6 +74,13 @@ export const StaffVehicle = ({
             <MapPin className="h-4 w-4" />
             <span>{location}</span>
           </div>
+
+          {currentPin !== undefined && (
+            <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+              <Pin className="h-4 w-4" />
+              <span>Pin: {currentPin}%</span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
