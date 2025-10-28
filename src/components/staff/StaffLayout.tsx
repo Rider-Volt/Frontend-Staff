@@ -11,7 +11,8 @@ import {
   Menu,
   Calendar,
   LogOut,
-  User
+  User,
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -28,6 +29,7 @@ const navigation = [
   { name: "Thanh toán", href: "/payment", icon: CreditCard },
   { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
   { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
+  { name: 'Quản lý tài khoản', href: '/accounts', icon: Users },
 ];
 
 const Sidebar = () => {

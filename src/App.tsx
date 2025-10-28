@@ -10,8 +10,8 @@ import StaffPayment from "./pages/staffPage/StaffPayment";
 import StaffIssues from "./pages/staffPage/staffIssues";
 import StaffVehiclesPage from "./pages/staffPage/StaffVehiclesPage";
 import StaffStationOrdersPage from "./pages/staffPage/StaffStationOrdersPage";
+import StaffAccountManagementPage from "./pages/staffPage/StaffAccountManagementPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
-import AdminCustomersPage from "./pages/adminPage/AdminCustomersPage";
 import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
 import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
@@ -65,21 +65,16 @@ const App = () => (
               <StaffStationOrdersPage />
             </ProtectedRoute>
           } />
+          <Route path="/accounts" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffAccountManagementPage />
+            </ProtectedRoute>
+          } />
           
           {/* Admin routes - only accessible by admin */}
           <Route path="/admin" element={
             <ProtectedRoute requiredRole="admin">
               <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/customers" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminCustomersPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/adminCustomers" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminCustomersPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/stations" element={
