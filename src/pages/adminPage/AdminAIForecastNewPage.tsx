@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RefreshCw, Brain } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import AdminPeakHours from '@/components/admin/AdminPeakHours';
+import AdminAIForecastNew from '@/components/admin/AdminAIForecastNew';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
-const AdminPeakHoursPage = () => {
+const AdminAIForecastNewPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -14,13 +14,18 @@ const AdminPeakHoursPage = () => {
         <div className="bg-white shadow-sm p-6 mb-8">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">Phân Tích Giờ Cao Điểm</h1>
-              <p className="text-gray-600">Phân tích mẫu đặt xe và đề xuất tối ưu hóa</p>
+              <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+                <Brain className="h-8 w-8 text-purple-600 mr-3" />
+                Dự Báo AI
+              </h1>
+              <p className="text-gray-600 mt-1">
+                🤖 AI dự báo nhu cầu thuê và gợi ý mở rộng đội xe
+              </p>
             </div>
             <div className="flex space-x-2">
               <Button 
                 variant="outline" 
-                className="border-green-500 text-green-700 hover:bg-green-100"
+                className="border-purple-500 text-purple-700 hover:bg-purple-100"
                 onClick={() => window.location.reload()}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -39,12 +44,12 @@ const AdminPeakHoursPage = () => {
         </div>
 
         <div className="px-6 pb-10">
-          <AdminPeakHours />
+          <AdminAIForecastNew />
         </div>
       </div>
     </AdminLayout>
   );
 };
 
-export default AdminPeakHoursPage;
+export default AdminAIForecastNewPage;
 

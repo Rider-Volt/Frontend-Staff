@@ -1,11 +1,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Brain } from 'lucide-react';
+import { ArrowLeft, RefreshCw, BarChart3 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import AdminAIForecast from '@/components/admin/AdminAIForecast';
+import AdminReportsAnalytics from '@/components/admin/AdminReportsAnalytics';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
-const AdminAIForecastPage = () => {
+const AdminReportsAnalyticsPage = () => {
   const navigate = useNavigate();
 
   return (
@@ -15,15 +15,17 @@ const AdminAIForecastPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-800 flex items-center">
-                <Brain className="h-8 w-8 text-blue-500 mr-3" />
-                Dự Báo AI Mở Rộng Đội Xe
+                <BarChart3 className="h-8 w-8 text-green-600 mr-3" />
+                Báo Cáo & Phân Tích
               </h1>
-              <p className="text-gray-600">Dự báo nhu cầu và đề xuất mở rộng đội xe dựa trên AI</p>
+              <p className="text-gray-600 mt-1">
+                Phân tích giờ cao điểm và xu hướng mở rộng đội xe
+              </p>
             </div>
             <div className="flex space-x-2">
               <Button 
                 variant="outline" 
-                className="border-blue-500 text-blue-700 hover:bg-blue-100"
+                className="border-green-500 text-green-700 hover:bg-green-100"
                 onClick={() => window.location.reload()}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
@@ -42,11 +44,12 @@ const AdminAIForecastPage = () => {
         </div>
 
         <div className="px-6 pb-10">
-          <AdminAIForecast />
+          <AdminReportsAnalytics />
         </div>
       </div>
     </AdminLayout>
   );
 };
 
-export default AdminAIForecastPage;
+export default AdminReportsAnalyticsPage;
+

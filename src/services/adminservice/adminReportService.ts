@@ -78,3 +78,41 @@ export async function getAIForecast(): Promise<AIForecast> {
   return (await resp.json()) as AIForecast;
 }
 
+// ===== API /admin/ai/* endpoints =====
+
+// Lấy phân tích giờ cao điểm từ AI
+export async function getAIPeakHours(): Promise<PeakHourAnalysis> {
+  const resp = await fetch(`${API_BASE}/admin/ai/peak-hours`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+  
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền truy cập dự báo AI.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to load AI peak hours (${resp.status})`);
+  }
+  
+  return (await resp.json()) as PeakHourAnalysis;
+}
+
+// Lấy dự báo nhu cầu thuê từ AI
+export async function getAIForecastDemand(): Promise<AIForecast> {
+  const resp = await fetch(`${API_BASE}/admin/ai/forecast`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+  
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền truy cập dự báo nhu cầu AI.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to load AI forecast demand (${resp.status})`);
+  }
+  
+  return (await resp.json()) as AIForecast;
+}
+

@@ -85,8 +85,13 @@ const AdminVehicles = () => {
         console.log('First vehicle structure:', data[0]);
         console.log('All vehicle fields:', data[0] ? Object.keys(data[0]) : 'No data');
         
-        // Debug: kiểm tra status
-        console.log('Vehicle statuses:', data.map(v => ({ id: v.vehicleId, status: v.status, model: v.model })));
+        // Debug: kiểm tra licensePlate
+        console.log('License plates:', data.map(v => ({ 
+          id: v.vehicleId, 
+          licensePlate: v.licensePlate,
+          status: v.status, 
+          model: v.model 
+        })));
         
         // Đếm theo status
         const statusCounts = data.reduce((acc, v) => {
@@ -251,7 +256,6 @@ const AdminVehicles = () => {
         stationId: editingVehicle.stationId,
         pricePerDay: editingVehicle.pricePerDay,
         photoUrl: editingVehicle.imageUrl || '',
-        status: editingVehicle.status,
         currentPin: editingVehicle.currentPin
       };
       
@@ -262,13 +266,12 @@ const AdminVehicles = () => {
       
       console.log('Updated vehicle response:', updatedVehicle);
       
-      // Cập nhật trạng thái và pin ở local vì API có thể không trả về status/pin
-      const updatedVehicleWithStatus = { 
+      // Cập nhật pin ở local vì API có thể không trả về pin
+      const updatedVehicleWithPin = { 
         ...updatedVehicle, 
-        status: editingVehicle.status,
         currentPin: editingVehicle.currentPin 
       };
-      setVehicles(vehicles.map(v => v.vehicleId === editingVehicle.vehicleId ? updatedVehicleWithStatus : v));
+      setVehicles(vehicles.map(v => v.vehicleId === editingVehicle.vehicleId ? updatedVehicleWithPin : v));
       setIsEditDialogOpen(false);
       setEditingVehicle(null);
       alert('Cập nhật xe thành công!');
@@ -597,22 +600,6 @@ const AdminVehicles = () => {
                     max="100"
                   />
                   <p className="text-xs text-gray-500 mt-1">Pin level từ 0 đến 100%</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Trạng thái</label>
-                  <Select 
-                    value={editingVehicle.status || 'AVAILABLE'} 
-                    onValueChange={(value) => setEditingVehicle({...editingVehicle, status: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
-                      <SelectItem value="RENTED">Đang thuê</SelectItem>
-                      <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

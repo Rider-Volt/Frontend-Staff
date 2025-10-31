@@ -101,14 +101,34 @@ export async function checkModelAvailability(modelId: number): Promise<any> {
   return await resp.json();
 }
 
-// Tạo model mới
-export async function createModel(data: CreateModelRequest): Promise<Model> {
-  console.log('Creating model with data:', JSON.stringify(data, null, 2));
+// Tạo model mới (multipart/form-data với file ảnh)
+export async function createModel(
+  name: string,
+  type: "CAR" | "BIKE",
+  pricePerDay: number,
+  photoFile?: File
+): Promise<Model> {
+  console.log('Creating model with multipart/form-data');
+  
+  const form = new FormData();
+  form.append("name", name);
+  form.append("type", type);
+  form.append("pricePerDay", String(pricePerDay));
+  if (photoFile) {
+    form.append("photo", photoFile);
+  }
+  
+  const adminToken = localStorage.getItem("admin_token");
+  const accessToken = localStorage.getItem("accessToken");
+  const token = adminToken || accessToken || "";
   
   const resp = await fetch(`${API_BASE}/admin/models`, {
     method: "POST",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Không set Content-Type để browser tự set với boundary
+    },
+    body: form,
   });
   
   console.log('Response status:', resp.status);
@@ -122,15 +142,7 @@ export async function createModel(data: CreateModelRequest): Promise<Model> {
     try {
       const errorData = await resp.json();
       console.error('Error response:', errorData);
-      
-      // Handle specific backend validation errors
-      if (errorData.message && errorData.message.includes('HV000030')) {
-        errorMessage = 'Lỗi backend: Enum ModelType không thể validate với @NotBlank. Vui lòng liên hệ admin để sửa lỗi backend.';
-      } else if (errorData.message && errorData.message.includes('jakarta.validation')) {
-        errorMessage = 'Lỗi validation backend: ' + errorData.message;
-      } else {
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      }
+      errorMessage = errorData.message || errorData.error || errorMessage;
     } catch {
       const text = await resp.text().catch(() => resp.statusText);
       console.error('Failed to create model:', text);
@@ -143,12 +155,35 @@ export async function createModel(data: CreateModelRequest): Promise<Model> {
   return (await resp.json()) as Model;
 }
 
-// Cập nhật thông tin model
-export async function updateModel(modelId: number, data: UpdateModelRequest): Promise<Model> {
+// Cập nhật thông tin model (multipart/form-data với file ảnh)
+export async function updateModel(
+  modelId: number,
+  name: string,
+  type: "CAR" | "BIKE",
+  pricePerDay: number,
+  photoFile?: File
+): Promise<Model> {
+  console.log('Updating model with multipart/form-data');
+  
+  const form = new FormData();
+  form.append("name", name);
+  form.append("type", type);
+  form.append("pricePerDay", String(pricePerDay));
+  if (photoFile) {
+    form.append("photo", photoFile);
+  }
+  
+  const adminToken = localStorage.getItem("admin_token");
+  const accessToken = localStorage.getItem("accessToken");
+  const token = adminToken || accessToken || "";
+  
   const resp = await fetch(`${API_BASE}/admin/models/${modelId}`, {
     method: "PUT",
-    headers: authHeaders(),
-    body: JSON.stringify(data),
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // Không set Content-Type để browser tự set với boundary
+    },
+    body: form,
   });
   
   if (!resp.ok) {
@@ -163,15 +198,7 @@ export async function updateModel(modelId: number, data: UpdateModelRequest): Pr
     try {
       const errorData = await resp.json();
       console.error('Error response:', errorData);
-      
-      // Handle specific backend validation errors
-      if (errorData.message && errorData.message.includes('HV000030')) {
-        errorMessage = 'Lỗi backend: Enum ModelType không thể validate với @NotBlank. Vui lòng liên hệ admin để sửa lỗi backend.';
-      } else if (errorData.message && errorData.message.includes('jakarta.validation')) {
-        errorMessage = 'Lỗi validation backend: ' + errorData.message;
-      } else {
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      }
+      errorMessage = errorData.message || errorData.error || errorMessage;
     } catch {
       const text = await resp.text().catch(() => resp.statusText);
       console.error('Failed to update model:', text);

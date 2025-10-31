@@ -70,6 +70,10 @@ const AdminModels = () => {
     pricePerDay: 0,
     photoUrl: ''
   });
+  const [newModelPhotoFile, setNewModelPhotoFile] = useState<File | null>(null);
+  const [newModelPhotoPreview, setNewModelPhotoPreview] = useState<string>("");
+  const [editModelPhotoFile, setEditModelPhotoFile] = useState<File | null>(null);
+  const [editModelPhotoPreview, setEditModelPhotoPreview] = useState<string>("");
 
   // Tải danh sách models từ API
   useEffect(() => {
@@ -124,14 +128,39 @@ const AdminModels = () => {
     }
     
     try {
-      const createdModel = await createModel(newModel);
+      const createdModel = await createModel(
+        newModel.name,
+        newModel.type,
+        newModel.pricePerDay,
+        newModelPhotoFile || undefined
+      );
       setModels([...models, createdModel]);
       setNewModel({ name: '', type: 'CAR', pricePerDay: 0, photoUrl: '' });
+      setNewModelPhotoFile(null);
+      setNewModelPhotoPreview("");
       setIsAddDialogOpen(false);
       alert('Thêm model thành công!');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Lỗi khi thêm model');
     }
+  };
+  
+  const handlePhotoFileChange = (file?: File | null) => {
+    if (!file) return;
+    setNewModelPhotoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    if (newModelPhotoPreview) {
+      URL.revokeObjectURL(newModelPhotoPreview);
+    }
+    setNewModelPhotoPreview(objectUrl);
+  };
+  
+  const clearPhotoFile = () => {
+    if (newModelPhotoPreview) {
+      URL.revokeObjectURL(newModelPhotoPreview);
+    }
+    setNewModelPhotoFile(null);
+    setNewModelPhotoPreview("");
   };
 
   // Cập nhật thông tin model
@@ -139,22 +168,40 @@ const AdminModels = () => {
     if (!editingModel) return;
     
     try {
-      // Gửi đầy đủ dữ liệu theo yêu cầu BE
-      const updateData: UpdateModelRequest = {
-        name: editingModel.name,
-        type: editingModel.type,
-        pricePerDay: editingModel.pricePerDay,
-        photoUrl: editingModel.photoUrl
-      };
-      
-      const updatedModel = await updateModel(editingModel.id, updateData);
+      const updatedModel = await updateModel(
+        editingModel.id,
+        editingModel.name,
+        editingModel.type,
+        editingModel.pricePerDay,
+        editModelPhotoFile || undefined
+      );
       setModels(models.map(m => m.id === editingModel.id ? updatedModel : m));
       setIsEditDialogOpen(false);
       setEditingModel(null);
+      setEditModelPhotoFile(null);
+      setEditModelPhotoPreview("");
       alert('Cập nhật model thành công!');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Lỗi khi cập nhật model');
     }
+  };
+  
+  const handleEditPhotoFileChange = (file?: File | null) => {
+    if (!file) return;
+    setEditModelPhotoFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    if (editModelPhotoPreview) {
+      URL.revokeObjectURL(editModelPhotoPreview);
+    }
+    setEditModelPhotoPreview(objectUrl);
+  };
+  
+  const clearEditPhotoFile = () => {
+    if (editModelPhotoPreview) {
+      URL.revokeObjectURL(editModelPhotoPreview);
+    }
+    setEditModelPhotoFile(null);
+    setEditModelPhotoPreview("");
   };
 
   // Lấy loại badge cho loại xe
@@ -248,13 +295,43 @@ const AdminModels = () => {
                 />
               </div>
               <div>
-                <Label>URL Ảnh</Label>
-                <Input 
-                  placeholder="Nhập URL ảnh model (tùy chọn)" 
-                  value={newModel.photoUrl}
-                  onChange={(e) => setNewModel({...newModel, photoUrl: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-1">Có thể để trống</p>
+                <Label>Chọn ảnh Model</Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => document.getElementById('model-photo-input')?.click()}
+                  >
+                    Chọn ảnh từ thư viện
+                  </Button>
+                  {newModelPhotoFile && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearPhotoFile}
+                    >
+                      Xóa
+                    </Button>
+                  )}
+                  <input
+                    id="model-photo-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => handlePhotoFileChange(e.target.files?.[0])}
+                  />
+                </div>
+                {newModelPhotoPreview && (
+                  <div className="mt-2">
+                    <img 
+                      src={newModelPhotoPreview} 
+                      alt="Preview"
+                      className="h-32 w-48 object-cover rounded-lg border"
+                    />
+                  </div>
+                )}
+                <p className="text-xs text-gray-500 mt-1">Chọn ảnh từ thiết bị của bạn (tùy chọn)</p>
               </div>
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
@@ -368,12 +445,54 @@ const AdminModels = () => {
                   />
                 </div>
                 <div>
-                  <Label>URL Ảnh</Label>
-                  <Input 
-                    placeholder="Nhập URL ảnh model" 
-                    value={editingModel.photoUrl}
-                    onChange={(e) => setEditingModel({...editingModel, photoUrl: e.target.value})}
-                  />
+                  <Label>Ảnh hiện tại</Label>
+                  {editingModel.photoUrl && (
+                    <div className="mb-2">
+                      <img 
+                        src={editingModel.photoUrl} 
+                        alt={editingModel.name}
+                        className="h-32 w-48 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  <Label>Chọn ảnh mới (tùy chọn)</Label>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => document.getElementById('edit-model-photo-input')?.click()}
+                    >
+                      Chọn ảnh từ thư viện
+                    </Button>
+                    {editModelPhotoFile && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearEditPhotoFile}
+                      >
+                        Xóa
+                      </Button>
+                    )}
+                    <input
+                      id="edit-model-photo-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleEditPhotoFileChange(e.target.files?.[0])}
+                    />
+                  </div>
+                  {editModelPhotoPreview && (
+                    <div className="mt-2">
+                      <Label className="text-xs">Ảnh mới:</Label>
+                      <img 
+                        src={editModelPhotoPreview} 
+                        alt="Preview"
+                        className="h-32 w-48 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-500 mt-1">Chọn ảnh mới nếu muốn thay đổi</p>
                 </div>
                 <div className="flex justify-end space-x-2">
                   <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>

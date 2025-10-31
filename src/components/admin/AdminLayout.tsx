@@ -13,7 +13,8 @@ import {
   PackageSearch,
   Clock,
   Brain,
-  ReceiptText
+  ReceiptText,
+  BarChart3
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -29,8 +30,8 @@ const menuItems = [
   { title: "Đơn thuê", url: "/admin/billings", icon: ReceiptText },
   { title: "Điểm thuê", url: "/admin/stations", icon: MapPin },
   { title: "Nhân viên", url: "/admin/employees", icon: UserCog },
-  { title: "Giờ cao điểm", url: "/admin/reports/peak-hours", icon: Clock },
-  { title: "Dự báo AI", url: "/admin/reports/ai-forecast", icon: Brain },
+  { title: "Báo cáo & Phân tích", url: "/admin/reports-analytics", icon: BarChart3 },
+  { title: "Dự báo AI", url: "/admin/ai-forecast", icon: Brain },
 ];
 
 const Sidebar = () => {

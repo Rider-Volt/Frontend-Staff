@@ -16,8 +16,8 @@ import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
 import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
 import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
-import AdminPeakHoursPage from "./pages/adminPage/AdminPeakHoursPage";
-import AdminAIForecastPage from "./pages/adminPage/AdminAIForecastPage";
+import AdminReportsAnalyticsPage from "./pages/adminPage/AdminReportsAnalyticsPage";
+import AdminAIForecastNewPage from "./pages/adminPage/AdminAIForecastNewPage";
 import AdminBillingsPage from "./pages/adminPage/AdminBillingsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -118,14 +118,14 @@ const App = () => (
               <AdminModelsPage />
             </ProtectedRoute>
           } />
-          <Route path="/admin/reports/peak-hours" element={
+          <Route path="/admin/reports-analytics" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminPeakHoursPage />
+              <AdminReportsAnalyticsPage />
             </ProtectedRoute>
           } />
-          <Route path="/admin/reports/ai-forecast" element={
+          <Route path="/admin/ai-forecast" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminAIForecastPage />
+              <AdminAIForecastNewPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/billings" element={
