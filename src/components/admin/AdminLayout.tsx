@@ -12,7 +12,8 @@ import {
   User,
   PackageSearch,
   Clock,
-  Brain
+  Brain,
+  ReceiptText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -25,6 +26,7 @@ const menuItems = [
   { title: "Tổng quan", url: "/admin", icon: LayoutDashboard },
   { title: "Quản lý xe", url: "/admin/vehicles", icon: CarIcon },
   { title: "Models xe", url: "/admin/models", icon: PackageSearch },
+  { title: "Đơn thuê", url: "/admin/billings", icon: ReceiptText },
   { title: "Điểm thuê", url: "/admin/stations", icon: MapPin },
   { title: "Nhân viên", url: "/admin/employees", icon: UserCog },
   { title: "Giờ cao điểm", url: "/admin/reports/peak-hours", icon: Clock },

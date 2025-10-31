@@ -139,6 +139,7 @@ const AdminModels = () => {
     if (!editingModel) return;
     
     try {
+      // Gửi đầy đủ dữ liệu theo yêu cầu BE
       const updateData: UpdateModelRequest = {
         name: editingModel.name,
         type: editingModel.type,

@@ -67,7 +67,8 @@ const AdminVehicles = () => {
     modelId: 0,
     stationId: 0,
     pricePerDay: 0,
-    photoUrl: ''
+    photoUrl: '',
+    currentPin: 0
   });
 
   console.log('AdminVehicles component rendering...');
@@ -158,7 +159,7 @@ const AdminVehicles = () => {
   const handleAddVehicle = async () => {
     // Validation - Kiểm tra dữ liệu đầu vào
     if (!newVehicle.code.trim()) {
-      alert('Vui lòng nhập code xe!');
+      alert('Vui lòng nhập biển sốsố xe!');
       return;
     }
     if (newVehicle.modelId <= 0) {
@@ -173,6 +174,10 @@ const AdminVehicles = () => {
       alert('Giá thuê/ngày không được âm!');
       return;
     }
+    if (newVehicle.currentPin < 0 || newVehicle.currentPin > 100) {
+      alert('Pin level phải từ 0 đến 100!');
+      return;
+    }
     
     try {
       const requestData = {
@@ -180,14 +185,32 @@ const AdminVehicles = () => {
         modelId: newVehicle.modelId,
         stationId: newVehicle.stationId,
         pricePerDay: newVehicle.pricePerDay,
-        photoUrl: newVehicle.photoUrl
+        photoUrl: newVehicle.photoUrl,
+        currentPin: newVehicle.currentPin
       };
       
       console.log('Creating vehicle with data:', JSON.stringify(requestData, null, 2));
       
       const createdVehicle = await createVehicle(requestData);
-      setVehicles([...vehicles, createdVehicle]);
-      setNewVehicle({ code: '', modelId: 0, stationId: 0, pricePerDay: 0, photoUrl: '' });
+      let createdVehicleWithPin: Vehicle = {
+        ...createdVehicle,
+        currentPin: createdVehicle.currentPin ?? newVehicle.currentPin,
+      } as Vehicle;
+
+      // Nếu BE không set pin khi tạo, gọi cập nhật để đảm bảo lưu pin
+      if ((createdVehicle.currentPin ?? 0) !== (newVehicle.currentPin ?? 0)) {
+        try {
+          const patched = await updateVehicle(createdVehicle.vehicleId, {
+            currentPin: newVehicle.currentPin,
+          });
+          createdVehicleWithPin = { ...patched } as Vehicle;
+        } catch (e) {
+          console.warn('Auto-set currentPin after create failed:', e);
+        }
+      }
+
+      setVehicles([...vehicles, createdVehicleWithPin]);
+      setNewVehicle({ code: '', modelId: 0, stationId: 0, pricePerDay: 0, photoUrl: '', currentPin: 0 });
       setIsAddDialogOpen(false);
       alert('Thêm xe thành công!');
     } catch (err) {
@@ -201,7 +224,7 @@ const AdminVehicles = () => {
     
     // Validation - Kiểm tra dữ liệu đầu vào
     if (!editingVehicle.licensePlate?.trim()) {
-      alert('Vui lòng nhập code xe!');
+      alert('Vui lòng nhập biển số xe!');
       return;
     }
     if (!editingVehicle.modelId || editingVehicle.modelId <= 0) {
@@ -323,7 +346,7 @@ const AdminVehicles = () => {
             </DialogHeader>
             <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium">Code xe <span className="text-red-500">*</span></label>
+                  <label className="text-sm font-medium">biển số xe <span className="text-red-500">*</span></label>
                   <Input 
                     placeholder="VD: VEH001" 
                     value={newVehicle.code || ''}
@@ -342,6 +365,18 @@ const AdminVehicles = () => {
                   required
                 />
                 <p className="text-xs text-gray-500 mt-1">Nhập ID của model xe</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Pin Level (%)</label>
+                <Input 
+                  type="number"
+                  placeholder="Nhập pin level (0-100)" 
+                  value={newVehicle.currentPin || 0}
+                  onChange={(e) => setNewVehicle({...newVehicle, currentPin: Math.max(0, Math.min(100, parseInt(e.target.value) || 0))})}
+                  min="0"
+                  max="100"
+                />
+                <p className="text-xs text-gray-500 mt-1">Pin level từ 0 đến 100%</p>
               </div>
               <div>
                 <label className="text-sm font-medium">ID Trạm <span className="text-red-500">*</span></label>
@@ -504,7 +539,7 @@ const AdminVehicles = () => {
                  <div>
                    <label className="text-sm font-medium">Code <span className="text-red-500">*</span></label>
                    <Input 
-                     placeholder="Nhập code xe" 
+                     placeholder="Nhập biển số xe" 
                      value={editingVehicle.licensePlate || ''}
                      onChange={(e) => setEditingVehicle({...editingVehicle, licensePlate: e.target.value})}
                      required
@@ -744,22 +779,22 @@ const AdminVehicles = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => {
+                          <DropdownMenuItem onSelect={() => {
                               setViewingVehicle(vehicle);
                               setIsViewDialogOpen(true);
                             }}>
                               <Eye className="mr-2 h-4 w-4" />
                               Xem chi tiết
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => {
+                          <DropdownMenuItem onSelect={() => {
                               setEditingVehicle(vehicle);
                               setIsEditDialogOpen(true);
                             }}>
                               <Edit className="mr-2 h-4 w-4" />
                               Chỉnh sửa
                             </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteVehicle(vehicle.vehicleId)}
+                          <DropdownMenuItem 
+                              onSelect={() => handleDeleteVehicle(vehicle.vehicleId)}
                               className="text-red-600"
                             >
                               <Trash2 className="mr-2 h-4 w-4" />

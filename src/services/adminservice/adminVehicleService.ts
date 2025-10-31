@@ -23,6 +23,7 @@ export interface CreateVehicleRequest {
   stationId: number;
   pricePerDay: number;
   photoUrl: string;
+  currentPin?: number;
 }
 
 export interface UpdateVehicleRequest {
@@ -50,6 +51,7 @@ function authHeaders(): HeadersInit {
   
   return {
     "Content-Type": "application/json",
+    Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
@@ -238,8 +240,13 @@ export async function deleteVehicle(vehicleId: number): Promise<void> {
     if (resp.status === 404) {
       throw new Error("Không tìm thấy xe để xóa.");
     }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to delete vehicle (${resp.status})`);
+    try {
+      const data = await resp.json();
+      throw new Error(data.message || data.error || `Failed to delete vehicle (${resp.status})`);
+    } catch {
+      const text = await resp.text().catch(() => resp.statusText);
+      throw new Error(text || `Failed to delete vehicle (${resp.status})`);
+    }
   }
 }
 

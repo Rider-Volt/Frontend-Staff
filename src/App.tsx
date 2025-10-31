@@ -18,6 +18,7 @@ import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
 import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
 import AdminPeakHoursPage from "./pages/adminPage/AdminPeakHoursPage";
 import AdminAIForecastPage from "./pages/adminPage/AdminAIForecastPage";
+import AdminBillingsPage from "./pages/adminPage/AdminBillingsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -125,6 +126,11 @@ const App = () => (
           <Route path="/admin/reports/ai-forecast" element={
             <ProtectedRoute requiredRole="admin">
               <AdminAIForecastPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/billings" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminBillingsPage />
             </ProtectedRoute>
           } />
           

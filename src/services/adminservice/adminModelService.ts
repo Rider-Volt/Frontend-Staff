@@ -16,10 +16,10 @@ export interface CreateModelRequest {
 }
 
 export interface UpdateModelRequest {
-  name?: string;
-  pricePerDay?: number;
-  photoUrl?: string;
-  type?: "CAR" | "BIKE";
+  name: string;
+  pricePerDay: number;
+  photoUrl: string;
+  type: "CAR" | "BIKE";
 }
 
 function authHeaders(): HeadersInit {
@@ -29,6 +29,7 @@ function authHeaders(): HeadersInit {
   
   return {
     "Content-Type": "application/json",
+    Accept: "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 }
