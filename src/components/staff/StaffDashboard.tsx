@@ -4,8 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Battery, Clock, AlertCircle, ArrowRight, LucideIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import heroImage from "@/assets/hero-station.jpg";
 import accountService from "@/services/accountService";
+import { getStaffVehicles, type StaffVehicle as StaffVehicleApi } from "@/services/staffservice/staffVehicleService";
 
 // StatCard component moved here
 interface StatCardProps {
@@ -49,15 +51,69 @@ const StatCard = ({ title, value, icon: Icon, trend, variant = "default" }: Stat
   );
 };
 
-const mockVehicles = [
-  { id: "1", name: "VinFast Klara S", status: "available" as const, batteryLevel: 95, location: "Khu A" },
-  { id: "2", name: "Yadea Xmen Neo", status: "rented" as const, batteryLevel: 45, location: "Khu B" },
-  { id: "3", name: "Pega NewTech", status: "booked" as const, batteryLevel: 80, location: "Khu A" },
-];
+// Helper to map API status to UI status used in `StaffVehicle`
+function mapStatusToCardStatus(apiStatus?: string): "available" | "booked" | "rented" | "maintenance" {
+  const normalized = (apiStatus || "").toUpperCase();
+  if (normalized === "AVAILABLE") return "available";
+  if (normalized === "RENTED") return "rented";
+  if (normalized === "BOOKED" || normalized === "RESERVED") return "booked";
+  return "maintenance";
+}
 
 const StaffDashboard = () => {
   const navigate = useNavigate();
-  
+  const [vehicles, setVehicles] = useState<StaffVehicleApi[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>("");
+
+  useEffect(() => {
+    let isMounted = true;
+    setIsLoading(true);
+    setError("");
+    getStaffVehicles()
+      .then((data) => {
+        if (isMounted) setVehicles(Array.isArray(data) ? data : []);
+      })
+      .catch((e: unknown) => {
+        if (isMounted) setError((e as Error)?.message || "Không thể tải danh sách xe");
+      })
+      .finally(() => {
+        if (isMounted) setIsLoading(false);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const { availableCount, rentedCount, maintenanceCount, averagePin } = useMemo(() => {
+    if (!vehicles.length) return { availableCount: 0, rentedCount: 0, maintenanceCount: 0, averagePin: 0 };
+    const counts = vehicles.reduce(
+      (acc, v) => {
+        const s = (v.status || "").toUpperCase();
+        if (s === "AVAILABLE") acc.available += 1;
+        else if (s === "RENTED") acc.rented += 1;
+        else acc.maintenance += 1; // treat other states as issues/maintenance
+        acc.pinSum += Number.isFinite(v.currentPin) ? v.currentPin : 0;
+        return acc;
+      },
+      { available: 0, rented: 0, maintenance: 0, pinSum: 0 }
+    );
+    const avg = Math.round(counts.pinSum / Math.max(vehicles.length, 1));
+    return { availableCount: counts.available, rentedCount: counts.rented, maintenanceCount: counts.maintenance, averagePin: avg };
+  }, [vehicles]);
+
+  const attentionVehicles = useMemo(() => {
+    const onlyMaintenance = vehicles.filter(v => (v.status || "").toUpperCase() === "MAINTENANCE");
+    const byPriority = onlyMaintenance.sort((a, b) => (a.currentPin ?? 0) - (b.currentPin ?? 0));
+    return byPriority.slice(0, 3).map((v) => ({
+      id: String(v.vehicleId),
+      name: v.model || v.vehicleType,
+      status: mapStatusToCardStatus(v.status),
+      batteryLevel: v.currentPin,
+      location: v.stationName || v.stationAddress || "",
+    }));
+  }, [vehicles]);
+
   const user = accountService.getCurrentUser();
   const userName = user?.name || user?.userName || 'Guest';
 
@@ -83,10 +139,10 @@ const StaffDashboard = () => {
 
         <div className="p-8 space-y-8">
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Xe sẵn sàng" value={12} icon={Car} variant="success" trend={{ value: 8, isPositive: true }} />
-            <StatCard title="Đang cho thuê" value={8} icon={Clock} variant="primary" />
-            <StatCard title="Pin trung bình" value="78%" icon={Battery} variant="warning" />
-            <StatCard title="Sự cố" value={2} icon={AlertCircle} variant="default" />
+            <StatCard title="Xe sẵn sàng" value={availableCount} icon={Car} variant="success" trend={{ value: 0, isPositive: true }} />
+            <StatCard title="Xe đang thuê" value={rentedCount} icon={Clock} variant="primary" />
+            <StatCard title="Pin trung bình" value={`${averagePin}%`} icon={Battery} variant="warning" />
+            <StatCard title="XE sự cố" value={maintenanceCount} icon={AlertCircle} variant="default" />
           </div>
 
           <Card>
@@ -95,16 +151,16 @@ const StaffDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
-                <Button size="lg" variant="default" className="w-full justify-between" onClick={() => navigate("/handover")}>
-                  Giao xe mới
+                <Button size="lg" variant="default" className="w-full justify-between" onClick={() => navigate("/vehicles")}>
+                  Quản lý xe
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="w-full justify-between" onClick={() => navigate("/payment")}>
-                  Xử lý thanh toán
+                <Button size="lg" variant="outline" className="w-full justify-between" onClick={() => navigate("/orders")}>
+                  Quản lý đơn thuê
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-                <Button size="lg" variant="outline" className="w-full justify-between" onClick={() => navigate("/issues")}>
-                  Báo cáo sự cố
+                <Button size="lg" variant="outline" className="w-full justify-between" onClick={() => navigate("/accounts")}>
+                  Quản lý tài khoản
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
@@ -120,7 +176,7 @@ const StaffDashboard = () => {
               </Button>
             </div>
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {mockVehicles.map((vehicle) => (
+              {attentionVehicles.map((vehicle) => (
                 <StaffVehicle
                   key={vehicle.id}
                   {...vehicle}

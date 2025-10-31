@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Car, User, Phone, Calendar, Clock, MapPin, Search } from 'lucide-react';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-// Map FE order buckets to backend billing statuses
+// các nhóm trạng thái đơn trên 
 type OrderStatus = 'pending' | 'confirmed' | 'ongoing' | 'paid' | 'completed' | 'cancelled';
 import { 
   getStationBillings, 
@@ -34,6 +34,7 @@ interface StaffOrder {
   customerPhone: string;
   pickupTime: Date;
   returnTime: Date;
+  actualReturnTime?: Date;
   pickupLocation: string;
   status: OrderStatus;
   notes?: string;
@@ -72,14 +73,14 @@ const StaffStationOrders = () => {
 	const [phoneLookupLoading, setPhoneLookupLoading] = useState(false);
 	const [phoneFilterActive, setPhoneFilterActive] = useState(false);
 
-  // Dialog state for uploading pre-image
+  // Trạng thái dialog khi tải ảnh hiện trạng trước khi thuê (pre-image)
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [billingId, setBillingId] = useState<string>('');
   const [imageUrl, setImageUrl] = useState<string>('');
 
-  // Dialog state for return vehicle
+  // (kiểm tra tình trạng xe)
   const [returnOpen, setReturnOpen] = useState(false);
   const [returning, setReturning] = useState(false);
   const [returnBillingId, setReturnBillingId] = useState<string>('');
@@ -87,16 +88,61 @@ const StaffStationOrders = () => {
   const [penaltyCost, setPenaltyCost] = useState<string>('');
   const [returnNote, setReturnNote] = useState<string>('');
 
-  // Map backend Billing -> FE StaffOrder
+ 
   const mapBilling = (b: BillingResponse): StaffOrder => {
-    // Get vehicle name from API response
+    // Lấy tên xe từ phản hồi API
     const vehicleName = b.vehicleModel || b.vehicle?.model?.name || 'Mẫu xe';
-    const pickup = new Date(b.startTime);
-    const ret = new Date(b.endTime);
+    
+    // Debug log để kiểm tra dữ liệu từ backend
+    console.log('Billing data for ID', b.id, ':', {
+      startTime: b.startTime,
+      endTime: b.endTime,
+      actualPickupAt: (b as any).actualPickupAt,
+      actualReturnAt: (b as any).actualReturnAt,
+      status: b.status
+    });
+    
+    // Xử lý thời gian nhận
+    let pickup: Date;
+    try {
+      pickup = new Date((b as any).actualPickupAt || b.startTime);
+      if (isNaN(pickup.getTime())) {
+        console.warn('Invalid pickup date for billing', b.id, ':', (b as any).actualPickupAt || b.startTime);
+        pickup = new Date(); // Fallback to current time
+      }
+    } catch (e) {
+      console.warn('Error parsing pickup date for billing', b.id, ':', e);
+      pickup = new Date();
+    }
+    
+    // Xử lý thời gian trả dự kiến (không fallback về thời gian hiện tại)
+    // Nếu BE không trả endTime hợp lệ thì ret sẽ là Invalid Date
+    const ret: Date = new Date(b.endTime);
+    
     const stationName = b.vehicle?.station?.name || '';
 
-    // Normalize various backend status spellings/aliases
     const rawStatus = String((b as any).status || 'PENDING').toUpperCase();
+    
+    // Xử lý thời gian trả thực tế
+    let actualReturn: Date | undefined;
+    const actualReturnAtValue = (b as any).actualReturnAt;
+    if (actualReturnAtValue && actualReturnAtValue !== 'null' && actualReturnAtValue !== '') {
+      try {
+        actualReturn = new Date(actualReturnAtValue);
+        if (isNaN(actualReturn.getTime())) {
+          console.warn('Invalid actual return date for billing', b.id, ':', actualReturnAtValue);
+          actualReturn = undefined;
+        } else {
+          console.log('Found actual return time for billing', b.id, ':', actualReturnAtValue, '->', actualReturn);
+        }
+      } catch (e) {
+        console.warn('Error parsing actual return date for billing', b.id, ':', e);
+        actualReturn = undefined;
+      }
+    } else {
+      console.log('No actual return time for billing', b.id, 'actualReturnAt:', actualReturnAtValue);
+    }
+    
     const status: OrderStatus = (() => {
       switch (rawStatus) {
         case 'PENDING':
@@ -131,6 +177,7 @@ const StaffStationOrders = () => {
       customerPhone: b.renterPhone || b.renter?.phone || '',
       pickupTime: pickup,
       returnTime: ret,
+      actualReturnTime: actualReturn,
       pickupLocation: stationName,
       status,
     };
@@ -171,13 +218,28 @@ const StaffStationOrders = () => {
 		return orders.some(o => (o.pickupLocation || '').trim().length > 0);
 	}, [orders]);
 
+  const reloadDataBasedOnFilter = async () => {
+    if (phoneFilterActive && phoneCheckIn.trim()) {
+      // Nếu đang lọc theo SĐT, reload theo SĐT
+      const list = await getBillingsByPhone(phoneCheckIn.trim());
+      const mapped = list.map(mapBilling);
+      setOrders(mapped);
+    } else {
+      // Nếu không lọc, reload toàn bộ
+      const reloadData = await getStationBillings();
+      const mappedData = reloadData.map(mapBilling);
+      setOrders(mappedData);
+      setStationOrders(mappedData);
+    }
+  };
+
   const updateStatus = async (id: string, next: OrderStatus) => {
-    // Map FE status to backend status
+    // Ánh xạ trạng thái FE sang trạng thái BE
     const toBackend = (s: OrderStatus): BillingStatus | null => {
       if (s === 'completed') return 'COMPLETED';
       if (s === 'cancelled') return 'CANCELLED';
       if (s === 'pending') return 'PENDING';
-      return null; // no-op for confirmed/ongoing because backend doesn't have those statuses
+      return null; 
     };
 
     const backendStatus = toBackend(next);
@@ -188,20 +250,8 @@ const StaffStationOrders = () => {
 
     try {
       const updated = await updateBillingStatus(Number(id), backendStatus);
-      // Map backend returned status to FE OrderStatus
-      const newStatus: OrderStatus = ((): OrderStatus => {
-        switch (updated.status) {
-          case 'PENDING': return 'pending';
-          case 'APPROVED': return 'confirmed';
-          case 'RENTING': return 'ongoing';
-          case 'PAYED': return 'paid';
-          case 'COMPLETED': return 'completed';
-          case 'CANCELLED': return 'cancelled';
-          default: return 'pending';
-        }
-      })();
-
-      setOrders(prev => prev.map(o => (o.id === String(updated.id) ? { ...o, status: newStatus } : o)));
+      await reloadDataBasedOnFilter();
+      alert('Cập nhật trạng thái thành công!');
     } catch (e: any) {
       alert(e?.message || 'Cập nhật trạng thái thất bại');
     }
@@ -211,8 +261,7 @@ const StaffStationOrders = () => {
   const handleCheckIn = async (id: string) => {
     try {
       const updated = await checkInByBillingId(Number(id));
-      const newStatus: OrderStatus = updated.status === 'RENTING' ? 'ongoing' : 'confirmed';
-      setOrders(prev => prev.map(o => (o.id === String(updated.id) ? { ...o, status: newStatus } : o)));
+      await reloadDataBasedOnFilter();
       alert('Check-in thành công!');
     } catch (e: any) {
       alert(e?.message || 'Check-in thất bại');
@@ -223,8 +272,7 @@ const StaffStationOrders = () => {
   const handleApprovePayment = async (id: string) => {
     try {
       const updated = await approveCustomerPayment(Number(id));
-      const newStatus: OrderStatus = updated.status === 'PAYED' ? 'paid' : 'confirmed';
-      setOrders(prev => prev.map(o => (o.id === String(updated.id) ? { ...o, status: newStatus } : o)));
+      await reloadDataBasedOnFilter();
       alert('Phê duyệt thanh toán thành công!');
     } catch (e: any) {
       alert(e?.message || 'Phê duyệt thanh toán thất bại');
@@ -238,7 +286,7 @@ const StaffStationOrders = () => {
 
   const confirmReturnVehicle = async () => {
     if (!returnBillingId.trim()) {
-      alert('Vui lòng nhập ID hóa đơn.');
+      alert('Vui lòng nhập ID đơn thuê.');
       return;
     }
     if (!finalImageUrl.trim()) {
@@ -258,7 +306,7 @@ const StaffStationOrders = () => {
         penalty, 
         returnNote.trim()
       );
-      // Map backend status to frontend status
+      // trạng thái 
       const newStatus: OrderStatus = (() => {
         switch (updated.status) {
           case 'PENDING': return 'pending';
@@ -271,11 +319,7 @@ const StaffStationOrders = () => {
         }
       })();
       
-      // Reload all orders from server to get latest status
-      const reloadData = await getStationBillings();
-      const mappedData = reloadData.map(mapBilling);
-      setOrders(mappedData);
-      setStationOrders(mappedData);
+      await reloadDataBasedOnFilter();
       
       setReturnOpen(false);
       setReturnBillingId('');
@@ -294,6 +338,7 @@ const StaffStationOrders = () => {
   const handleApprovePenalty = async (id: string) => {
     try {
       const updated = await approvePenaltyPayment(Number(id));
+      await reloadDataBasedOnFilter();
       alert('Phê duyệt thanh toán phạt thành công!');
     } catch (e: any) {
       alert(e?.message || 'Phê duyệt thanh toán phạt thất bại');
@@ -302,7 +347,7 @@ const StaffStationOrders = () => {
 
 
 
-	// Tìm tất cả billings theo số điện thoại → đổ thẳng vào bảng chính
+	// Tìm tất cả billings theo số điện thoại 
 	const handleFindBillingsByPhone = async () => {
 		if (!phoneCheckIn.trim()) {
 			alert('Vui lòng nhập số điện thoại');
@@ -315,7 +360,7 @@ const StaffStationOrders = () => {
 			setOrders(mapped);
 			setPhoneFilterActive(true);
 		} catch (e: any) {
-			alert(e?.message || 'Không tải được danh sách hóa đơn theo SĐT');
+			alert(e?.message || 'Không tải được danh sách đơn thuê theo SĐT');
 		} finally {
 			setPhoneLookupLoading(false);
 		}
@@ -329,7 +374,6 @@ const StaffStationOrders = () => {
 	};
 
   const actionOptions = (status: OrderStatus): { label: string; value: OrderStatus; action?: string }[] => {
-    // Backend only supports PAYED and CANCELLED transitions. Offer only meaningful actions.
     switch (status) {
       case 'pending':
         return [
@@ -359,7 +403,7 @@ const StaffStationOrders = () => {
     }
   };
 
-  // Open dialog to upload image for rent-out
+  // Mở dialog để tải ảnh hiện trạng trước khi giao xe
   const openUploadDialog = (id: string) => {
     setSelectedOrderId(id);
     setBillingId(id);
@@ -367,7 +411,7 @@ const StaffStationOrders = () => {
     setUploadOpen(true);
   };
 
-  // Open dialog for return vehicle
+  // Mở dialog để xử lý trả xe
   const openReturnDialog = (id: string) => {
     setReturnBillingId(id);
     setFinalImageUrl('');
@@ -378,7 +422,7 @@ const StaffStationOrders = () => {
 
   const confirmUploadAndCheckIn = async () => {
     if (!billingId.trim()) {
-      alert('Vui lòng nhập ID hóa đơn.');
+      alert('Vui lòng nhập ID đơn thuê.');
       return;
     }
     if (!imageUrl.trim()) {
@@ -390,8 +434,9 @@ const StaffStationOrders = () => {
       
       await updatePreImage(Number(billingId), imageUrl.trim());
       const updated = await checkInByBillingId(Number(billingId));
-      const newStatus: OrderStatus = updated.status === 'RENTING' ? 'ongoing' : 'confirmed';
-      setOrders(prev => prev.map(o => (o.id === String(updated.id) ? { ...o, status: newStatus } : o)));
+      
+      await reloadDataBasedOnFilter();
+      
       setUploadOpen(false);
       setSelectedOrderId(null);
       setBillingId('');
@@ -436,12 +481,12 @@ const StaffStationOrders = () => {
             </div>
           </div>
 
-          {/* Check-in by phone section */}
+          {/* check-in theo số điện thoại */}
           <div className="flex flex-col sm:flex-row gap-3 mb-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="flex-1">
-			<Label htmlFor="phone-checkin" className="text-sm font-medium text-blue-800 mb-2 block">
-				Tìm hóa đơn theo số điện thoại
-			</Label>
+          <div className="flex-1">
+      		<Label htmlFor="phone-checkin" className="text-sm font-medium text-blue-800 mb-2 block">
+      			Tìm đơn thuê theo số điện thoại
+      		</Label>
               <Input
                 id="phone-checkin"
                 placeholder="Nhập số điện thoại khách hàng..."
@@ -457,7 +502,7 @@ const StaffStationOrders = () => {
 					disabled={!phoneCheckIn.trim() || phoneLookupLoading}
 				>
 					<Search className="w-4 h-4 mr-2" />
-					Tìm hóa đơn
+					Tìm đơn thuê
 				</Button>
 				{phoneFilterActive && (
 					<Button variant="outline" onClick={clearPhoneFilter}>Xóa lọc</Button>
@@ -466,7 +511,7 @@ const StaffStationOrders = () => {
           </div>
 
 			{phoneLookupLoading && (
-				<div className="mb-4 text-sm text-gray-600">Đang tìm hóa đơn theo số điện thoại...</div>
+				<div className="mb-4 text-sm text-gray-600">Đang tìm đơn thuê theo số điện thoại...</div>
 			)}
 
           <div className="overflow-x-auto">
@@ -485,7 +530,7 @@ const StaffStationOrders = () => {
                   <TableHead>Trả</TableHead>
                   {hasLocationColumn && <TableHead>Địa điểm</TableHead>}
                   <TableHead>Trạng thái</TableHead>
-                  <TableHead className="text-right">Thao tác</TableHead>
+                  <TableHead className="text-center">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -506,84 +551,103 @@ const StaffStationOrders = () => {
                         )}
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2"><Calendar className="w-4 h-4 text-gray-500" />{formatDateTime(o.pickupTime)}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2"><Clock className="w-4 h-4 text-gray-500" />{formatDateTime(o.returnTime)}</div>
-                      </div>
-                    </TableCell>
+                     <TableCell>
+                       <div className="space-y-0.5">
+                         <div className="flex items-center gap-2">
+                           <Calendar className="w-4 h-4 text-gray-500" />
+                           {o.pickupTime && !isNaN(o.pickupTime.getTime()) && o.status !== 'pending' && o.status !== 'cancelled' ? (
+                             <span className="text-green-600 font-medium">{formatDateTime(o.pickupTime)}</span>
+                           ) : o.status === 'completed' || o.status === 'ongoing' ? (
+                             <span className="text-gray-500 italic">Chưa có thời gian nhận</span>
+                           ) : (
+                             <span className="text-gray-500 italic">Chưa nhận xe</span>
+                           )}
+                         </div>
+                       </div>
+                     </TableCell>
+                     <TableCell>
+                       <div className="space-y-0.5">
+                         <div className="flex items-center gap-2">
+                           <Clock className="w-4 h-4 text-gray-500" />
+                           {o.actualReturnTime ? (
+                             <span className="text-green-600 font-medium">{formatDateTime(o.actualReturnTime)}</span>
+                           ) : o.status === 'completed' ? (
+                             <span className="text-gray-500 italic">Chưa có thời gian trả</span>
+                           ) : (
+                             <span className="text-gray-500 italic">Chưa trả xe</span>
+                           )}
+                         </div>
+                       </div>
+                     </TableCell>
                     {hasLocationColumn && (
                       <TableCell>
                         <div className="flex items-center gap-2"><MapPin className="w-4 h-4 text-gray-500" />{o.pickupLocation}</div>
                       </TableCell>
                     )}
                     <TableCell>{statusBadge(o.status)}</TableCell>
-                    <TableCell>
-                      {o.status === 'ongoing' ? (
-                        <Button 
-                          onClick={() => handleInspectReturn(o.id)}
-                          className="bg-orange-600 hover:bg-orange-700 text-white"
-                        >
-                          Trả xe
-                        </Button>
-                      ) : o.status === 'paid' ? (
-                        <Button 
-                          onClick={() => openUploadDialog(o.id)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                        >
-                          Giao xe 
-                        </Button>
-                      ) : actionOptions(o.status).length === 0 ? (
-                        <span className="text-sm text-gray-500">Không có thao tác</span>
-                      ) : (
-                        <div className="inline-block w-44">
-                          <Select onValueChange={(v) => {
-                            const option = actionOptions(o.status).find(opt => opt.value === v);
-                            if (option?.action) {
-                              switch (option.action) {
-                                case 'checkin':
-                                  handleCheckIn(o.id);
-                                  return;
-                                case 'approve-payment':
-                                  handleApprovePayment(o.id);
-                                  return;
-                                case 'rent-out-with-image':
-                                  openUploadDialog(o.id);
-                                  return;
-                                case 'rent-out':
-                                  // Move to ongoing locally (BE may do check-in elsewhere)
-                                  updateStatus(o.id, 'ongoing');
-                                  return;
-                                case 'inspect-return':
-                                  handleInspectReturn(o.id);
-                                  return;
-                                case 'approve-penalty':
-                                  handleApprovePenalty(o.id);
-                                  return;
-                                default:
-                                  updateStatus(o.id, v as OrderStatus);
-                                  return;
-                              }
-                            } else {
-                              updateStatus(o.id, v as OrderStatus);
-                            }
-                          }}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Chọn thao tác" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {actionOptions(o.status).map(opt => (
-                                <SelectItem key={`${opt.value}-${opt.action || 'default'}`} value={opt.value}>{opt.label}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                    </TableCell>
+                     <TableCell className="text-center">
+                       <div className="flex justify-center">
+                         {o.status === 'ongoing' ? (
+                           <Button 
+                             onClick={() => handleInspectReturn(o.id)}
+                             className="bg-orange-600 hover:bg-orange-700 text-white min-w-[100px]"
+                           >
+                             Trả xe
+                           </Button>
+                         ) : o.status === 'paid' ? (
+                           <Button 
+                             onClick={() => openUploadDialog(o.id)}
+                             className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[100px]"
+                           >
+                             Giao xe 
+                           </Button>
+                         ) : actionOptions(o.status).length === 0 ? (
+                           <span className="text-sm text-gray-500 min-w-[100px] text-center">Không có thao tác</span>
+                         ) : (
+                           <div className="min-w-[100px]">
+                             <Select onValueChange={(v) => {
+                               const option = actionOptions(o.status).find(opt => opt.value === v);
+                               if (option?.action) {
+                                 switch (option.action) {
+                                   case 'checkin':
+                                     handleCheckIn(o.id);
+                                     return;
+                                   case 'approve-payment':
+                                     handleApprovePayment(o.id);
+                                     return;
+                                   case 'rent-out-with-image':
+                                     openUploadDialog(o.id);
+                                     return;
+                                   case 'rent-out':                                    
+                                     updateStatus(o.id, 'ongoing');
+                                     return;
+                                   case 'inspect-return':
+                                     handleInspectReturn(o.id);
+                                     return;
+                                   case 'approve-penalty':
+                                     handleApprovePenalty(o.id);
+                                     return;
+                                   default:
+                                     updateStatus(o.id, v as OrderStatus);
+                                     return;
+                                 }
+                               } else {
+                                 updateStatus(o.id, v as OrderStatus);
+                               }
+                             }}>
+                               <SelectTrigger className="min-w-[100px]">
+                                 <SelectValue placeholder="Chọn thao tác" />
+                               </SelectTrigger>
+                               <SelectContent>
+                                 {actionOptions(o.status).map(opt => (
+                                   <SelectItem key={`${opt.value}-${opt.action || 'default'}`} value={opt.value}>{opt.label}</SelectItem>
+                                 ))}
+                               </SelectContent>
+                             </Select>
+                           </div>
+                         )}
+                       </div>
+                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -592,7 +656,7 @@ const StaffStationOrders = () => {
         </CardContent>
       </Card>
 
-      {/* Upload pre-image dialog */}
+      {/* Dialog tải ảnh hiện trạng trước khi thuê */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent>
           <DialogHeader>
@@ -600,9 +664,9 @@ const StaffStationOrders = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>ID Hóa đơn</Label>
+              <Label>ID Đơn thuê</Label>
               <Input 
-                placeholder="Nhập ID hóa đơn"
+                placeholder="Nhập ID đơn thuê"
                 value={billingId}
                 onChange={(e) => setBillingId(e.target.value)}
               />
@@ -625,7 +689,7 @@ const StaffStationOrders = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Return vehicle dialog */}
+      {/* Dialog trả xe */}
       <Dialog open={returnOpen} onOpenChange={setReturnOpen}>
         <DialogContent>
           <DialogHeader>
@@ -633,9 +697,9 @@ const StaffStationOrders = () => {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>ID Hóa đơn</Label>
+              <Label>ID Đơn thuê</Label>
               <Input 
-                placeholder="Nhập ID hóa đơn"
+                placeholder="Nhập ID đơn thuê"
                 value={returnBillingId}
                 onChange={(e) => setReturnBillingId(e.target.value)}
               />

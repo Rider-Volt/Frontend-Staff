@@ -8,6 +8,8 @@ export interface BillingResponse {
   bookingTime: string; // ISO
   startTime: string; // ISO
   endTime: string; // ISO
+  actualPickupAt?: string; // ISO – thời điểm nhận thực tế (nếu có)
+  actualReturnAt?: string; // ISO – thời điểm trả thực tế (nếu có)
   preImage?: string | null;
   finalImage?: string | null;
   status: BillingStatus;
