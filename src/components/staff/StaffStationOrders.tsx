@@ -102,26 +102,33 @@ const StaffStationOrders = () => {
       status: b.status
     });
     
-    // Xử lý thời gian nhận
+    // Xác định trạng thái thô từ BE
+    const rawStatus = String((b as any).status || 'PENDING').toUpperCase();
+
+    // Xử lý thời gian nhận: chỉ lấy actualPickupAt khi đã thực sự giao xe
+    // Các trạng thái được coi là đã giao xe: RENTING, COMPLETED, DONE, FINISHED
+    const canUseActualPickup = ['RENTING', 'COMPLETED', 'DONE', 'FINISHED'].includes(rawStatus);
     let pickup: Date;
     try {
-      pickup = new Date((b as any).actualPickupAt || b.startTime);
+      const source = canUseActualPickup && (b as any).actualPickupAt
+        ? (b as any).actualPickupAt
+        : b.startTime;
+      pickup = new Date(source);
       if (isNaN(pickup.getTime())) {
-        console.warn('Invalid pickup date for billing', b.id, ':', (b as any).actualPickupAt || b.startTime);
-        pickup = new Date(); // Fallback to current time
+        console.warn('Invalid pickup date for billing', b.id, ':', source);
+        pickup = new Date(b.startTime);
       }
     } catch (e) {
       console.warn('Error parsing pickup date for billing', b.id, ':', e);
-      pickup = new Date();
+      pickup = new Date(b.startTime);
     }
-    
+
     // Xử lý thời gian trả dự kiến (không fallback về thời gian hiện tại)
     // Nếu BE không trả endTime hợp lệ thì ret sẽ là Invalid Date
     const ret: Date = new Date(b.endTime);
     
     const stationName = b.vehicle?.station?.name || '';
 
-    const rawStatus = String((b as any).status || 'PENDING').toUpperCase();
     
     // Xử lý thời gian trả thực tế
     let actualReturn: Date | undefined;
@@ -471,9 +478,8 @@ const StaffStationOrders = () => {
               <SelectContent>
                   <SelectItem value="all">Tất cả</SelectItem>
                   <SelectItem value="pending">Chờ</SelectItem>
-                <SelectItem value="confirmed">Xác nhận</SelectItem>
-                <SelectItem value="ongoing">Đang thuê</SelectItem>
-                <SelectItem value="paid">Đã thanh toán</SelectItem>
+                  <SelectItem value="paid">Đã thanh toán</SelectItem>
+                  <SelectItem value="ongoing">Đang thuê</SelectItem>
                   <SelectItem value="completed">Hoàn thành</SelectItem>
                   <SelectItem value="cancelled">Đã hủy</SelectItem>
                 </SelectContent>
@@ -555,12 +561,12 @@ const StaffStationOrders = () => {
                        <div className="space-y-0.5">
                          <div className="flex items-center gap-2">
                            <Calendar className="w-4 h-4 text-gray-500" />
-                           {o.pickupTime && !isNaN(o.pickupTime.getTime()) && o.status !== 'pending' && o.status !== 'cancelled' ? (
+                           {o.pickupTime && !isNaN(o.pickupTime.getTime()) && (o.status === 'ongoing' || o.status === 'completed') ? (
                              <span className="text-green-600 font-medium">{formatDateTime(o.pickupTime)}</span>
                            ) : o.status === 'completed' || o.status === 'ongoing' ? (
                              <span className="text-gray-500 italic">Chưa có thời gian nhận</span>
                            ) : (
-                             <span className="text-gray-500 italic">Chưa nhận xe</span>
+                             <span className="text-gray-500 italic">Chưa trả xe</span>
                            )}
                          </div>
                        </div>

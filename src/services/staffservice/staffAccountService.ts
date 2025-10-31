@@ -11,7 +11,23 @@ export interface CustomerAccount {
 }
 
 export interface UpdateAccountStatusRequest {
-  status: "ACTIVE" | "INACTIVE" | "BANNED";
+  status: string;
+}
+
+export type StaffAccountStatus = "ACTIVE" | "INACTIVE" | "VERIFIED";
+
+// Renter (khách hàng) dành cho staff
+export interface RenterAccount {
+  id: number;
+  email: string;
+  name: string;
+  phone: string;
+  avatar?: string | null;
+  cccdUrl?: string | null;
+  gplxUrl?: string | null;
+  status: StaffAccountStatus | "BANNED" | string;
+  phoneVerified?: boolean;
+  riskScore?: number;
 }
 
 function authHeaders(): HeadersInit {
@@ -62,12 +78,14 @@ export async function updateCustomerAccountStatus(
 ): Promise<CustomerAccount> {
   console.log('Updating customer account status:', { accountId, status });
   
-  const requestData: UpdateAccountStatusRequest = { status };
+  const apiStatus = String(status).toLowerCase();
+  // Some backends expect a raw JSON string for enum updates
+  const requestData = JSON.stringify(apiStatus);
   
   const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {
     method: "PATCH",
     headers: authHeaders(),
-    body: JSON.stringify(requestData),
+    body: requestData,
   });
   
   console.log('Response status:', resp.status);
@@ -116,4 +134,57 @@ export async function getCustomerAccountById(accountId: number): Promise<Custome
   }
   
   return (await resp.json()) as CustomerAccount;
+}
+
+// Lấy danh sách renter (khách hàng) cho staff
+export async function getRenters(): Promise<RenterAccount[]> {
+  const resp = await fetch(`${API_BASE}/staff/accounts/renters`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền xem danh sách khách hàng.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to load renters (${resp.status})`);
+  }
+  return (await resp.json()) as RenterAccount[];
+}
+
+// Cập nhật trạng thái tài khoản khách hàng (renter) cho staff
+export async function updateRenterStatus(
+  accountId: number,
+  status: StaffAccountStatus
+): Promise<RenterAccount> {
+  const apiStatus = String(status).toLowerCase();
+  // Send raw JSON string to avoid backend JSON binding issues
+  const requestBody = JSON.stringify(apiStatus);
+  console.log('Updating renter status:', { accountId, status, apiStatus, requestBody: apiStatus });
+  const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: requestBody,
+  });
+  console.log('Update renter status response status:', resp.status);
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền cập nhật trạng thái khách hàng.");
+    }
+    let errorMessage = 'Failed to update renter status';
+    try {
+      const errorData = await resp.json();
+      console.error('Update renter status error response (json):', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      const text = await resp.text().catch(() => resp.statusText);
+      console.error('Update renter status error response (text):', text);
+      errorMessage = text || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+  return (await resp.json()) as RenterAccount;
 }

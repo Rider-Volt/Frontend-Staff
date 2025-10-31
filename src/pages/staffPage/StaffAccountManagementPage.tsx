@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import StaffAccountManagement from '@/components/staff/StaffAccountManagement';
+import StaffRenterManagement from '@/components/staff/StaffRenterManagement';
 import { StaffLayout } from '@/components/staff/StaffLayout';
 
 const StaffAccountManagementPage = () => {
@@ -16,33 +16,16 @@ const StaffAccountManagementPage = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-800 flex items-center">
                 <Users className="h-8 w-8 text-blue-500 mr-3" />
-                Quản Lý Tài Khoản Khách Hàng
+                Quản Lý Khách Hàng
               </h1>
-              <p className="text-gray-600">Quản lý trạng thái và thông tin tài khoản khách hàng</p>
+              <p className="text-gray-600">Xem danh sách khách hàng (renter)</p>
             </div>
-            <div className="flex space-x-2">
-              <Button 
-                variant="outline" 
-                className="border-blue-500 text-blue-700 hover:bg-blue-100"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Làm Mới
-              </Button>
-              <Button 
-                variant="outline" 
-                className="border-gray-500 text-gray-700 hover:bg-gray-100"
-                onClick={() => navigate(-1)}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Quay lại
-              </Button>
-            </div>
+            {/* Buttons removed as requested */}
           </div>
         </div>
 
         <div className="px-6 pb-10">
-          <StaffAccountManagement />
+          <StaffRenterManagement />
         </div>
       </div>
     </StaffLayout>

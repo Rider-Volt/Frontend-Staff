@@ -5,9 +5,11 @@ export type BillingStatus = "PENDING" | "PAYED" | "CANCELLED" | "RENTING" | "APP
 export interface BillingResponse {
   id: number;
   rentedDay: number;
-  bookingTime: string; // ISO
-  startTime: string; // ISO
-  endTime: string; // ISO
+  bookingTime?: string; // ISO
+  startTime?: string; // ISO (legacy)
+  endTime?: string; // ISO (legacy)
+  plannedStartDate?: string; // e.g. 2025-10-31
+  plannedEndDate?: string; // e.g. 2025-10-31
   actualPickupAt?: string; // ISO – thời điểm nhận thực tế (nếu có)
   actualReturnAt?: string; // ISO – thời điểm trả thực tế (nếu có)
   preImage?: string | null;
@@ -15,10 +17,11 @@ export interface BillingResponse {
   status: BillingStatus;
   vehicleId?: number;
   vehicleModel?: string;
+  stationId?: number;
+  stationName?: string;
   renterId?: number;
   renterName?: string;
   renterEmail?: string;
-  renterPhone?: string;
   renter?: {
     id?: number;
     name?: string;
@@ -103,6 +106,11 @@ export async function getBillingsByStatus(status: BillingStatus): Promise<Billin
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền xem danh sách đơn hàng.");
     }
+    // Some environments might not support this endpoint yet. Gracefully fallback
+    // to an empty list to avoid breaking the UI, and let callers handle no-data states.
+    if (resp.status === 404) {
+      return [] as BillingResponse[];
+    }
     const text = await resp.text().catch(() => resp.statusText);
     throw new Error(text || `Failed to load billings (${resp.status})`);
   }
@@ -168,6 +176,28 @@ export async function updatePreImage(id: number, imageUrl: string): Promise<Bill
   return (await resp.json()) as BillingResponse;
 }
 
+// Cập nhật hình ảnh xe trước khi thuê bằng file (multipart/form-data)
+export async function updatePreImageFile(id: number, file: File): Promise<BillingResponse> {
+  const form = new FormData();
+  form.append("preImage", file);
+  const resp = await fetch(`${API_BASE}/staff/billings/${id}/pre-image`, {
+    method: "PATCH",
+    headers: { 
+      ...authHeaders(),
+      // KHÔNG đặt Content-Type cho FormData để trình duyệt tự set boundary
+    },
+    body: form,
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền cập nhật hình ảnh.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to upload pre-image (${resp.status})`);
+  }
+  return (await resp.json()) as BillingResponse;
+}
+
 // Cập nhật hình ảnh xe sau khi trả (finalImage) - expects JSON with FinalImage URL
 export async function updateFinalImage(id: number, imageUrl: string): Promise<BillingResponse> {
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/final-image`, {
@@ -191,6 +221,26 @@ export async function updateFinalImage(id: number, imageUrl: string): Promise<Bi
   return (await resp.json()) as BillingResponse;
 }
 
+// Cập nhật hình ảnh xe khi trả bằng file (multipart/form-data)
+export async function updateFinalImageFile(id: number, file: File): Promise<BillingResponse> {
+  const form = new FormData();
+  form.append("finalImage", file);
+  const resp = await fetch(`${API_BASE}/staff/billings/${id}/final-image`, {
+    method: "PATCH",
+    headers: { 
+      ...authHeaders(),
+    },
+    body: form,
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền cập nhật hình ảnh.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to upload final-image (${resp.status})`);
+  }
+  return (await resp.json()) as BillingResponse;
+}
 // Lấy thống kê đơn hàng tại trạm
 export async function getBillingStatistics() {
   const resp = await fetch(`${API_BASE}/staff/billings/statistics`, {
@@ -258,24 +308,25 @@ export async function cancelBilling(id: number): Promise<BillingResponse> {
   return updateBillingStatus(id, "CANCELLED");
 }
 
-// Kiểm tra xe trả về
+// Kiểm tra xe trả về (multipart/form-data)
 export async function inspectReturnedVehicle(
   id: number, 
-  finalImage: string, 
+  finalImageFile: File, 
   penaltyCost: number, 
   note: string
 ): Promise<BillingResponse> {
+  const form = new FormData();
+  form.append("finalImage", finalImageFile);
+  form.append("penaltyCost", String(penaltyCost));
+  if (note.trim()) {
+    form.append("note", note.trim());
+  }
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/inspect-return`, {
     method: "POST",
     headers: { 
       ...authHeaders(),
-      "Content-Type": "application/json"
     },
-    body: JSON.stringify({
-      finalImage,
-      penaltyCost,
-      note
-    }),
+    body: form,
   });
   if (!resp.ok) {
     if (resp.status === 401 || resp.status === 403) {
@@ -287,11 +338,16 @@ export async function inspectReturnedVehicle(
   return (await resp.json()) as BillingResponse;
 }
 
-// Check-in bằng billing ID
-export async function checkInByBillingId(id: number): Promise<BillingResponse> {
+// Check-in bằng billing ID (có thể kèm preImage)
+export async function checkInByBillingId(id: number, preImageFile?: File): Promise<BillingResponse> {
+  const form = new FormData();
+  if (preImageFile) {
+    form.append("preImage", preImageFile);
+  }
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/check-in`, {
     method: "POST",
     headers: { ...authHeaders() },
+    body: form,
   });
   if (!resp.ok) {
     if (resp.status === 401 || resp.status === 403) {

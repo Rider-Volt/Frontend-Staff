@@ -25,11 +25,11 @@ interface StaffLayoutProps {
 const navigation = [
   { name: "Tổng quan", href: "/", icon: LayoutDashboard },
   { name: "Quản lý xe", href: "/vehicles", icon: Car },
-  { name: "Giao/Nhận xe", href: "/handover", icon: ClipboardCheck },
+  { name: "Giao/Trả xe", href: "/handover", icon: ClipboardCheck },
   { name: "Thanh toán", href: "/payment", icon: CreditCard },
   { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
   { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
-  { name: 'Quản lý tài khoản', href: '/accounts', icon: Users },
+  { name: 'Quản lý khách hàng', href: '/accounts', icon: Users },
 ];
 
 const Sidebar = () => {

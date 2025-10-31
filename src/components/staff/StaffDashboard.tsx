@@ -151,8 +151,8 @@ const StaffDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
-                <Button size="lg" variant="default" className="w-full justify-between" onClick={() => navigate("/vehicles")}>
-                  Quản lý xe
+                <Button size="lg" variant="default" className="w-full justify-between" onClick={() => navigate("/handover")}>
+                  Giao/Trả Xe
                   <ArrowRight className="h-4 w-4" />
                 </Button>
                 <Button size="lg" variant="outline" className="w-full justify-between" onClick={() => navigate("/orders")}>
