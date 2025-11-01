@@ -50,10 +50,12 @@ import {
   UpdateVehicleRequest
 } from '../../services/adminservice/adminVehicleService';
 import { getAllModels, Model } from '../../services/adminservice/adminModelService';
+import { getAllStations, Station } from '../../services/adminservice/adminStationService';
 
 const AdminVehicles = () => {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [models, setModels] = useState<Model[]>([]);
+  const [stations, setStations] = useState<Station[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -125,6 +127,20 @@ const AdminVehicles = () => {
     };
 
     fetchModels();
+  }, []);
+
+  // Tải danh sách stations từ API
+  useEffect(() => {
+    const fetchStations = async () => {
+      try {
+        const data = await getAllStations();
+        setStations(data);
+      } catch (err) {
+        console.error('Error fetching stations:', err);
+      }
+    };
+
+    fetchStations();
   }, []);
 
   // Lọc xe dựa trên từ khóa tìm kiếm
@@ -358,16 +374,27 @@ const AdminVehicles = () => {
                   />
                 </div>
               <div>
-                <label className="text-sm font-medium">ID Model <span className="text-red-500">*</span></label>
-                <Input 
-                  type="number"
-                  placeholder="Nhập ID model" 
-                  value={newVehicle.modelId || ''}
-                  onChange={(e) => setNewVehicle({...newVehicle, modelId: parseInt(e.target.value) || 0})}
-                  min="1"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Nhập ID của model xe</p>
+                <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
+                <Select 
+                  value={newVehicle.modelId > 0 ? newVehicle.modelId.toString() : ''}
+                  onValueChange={(value) => setNewVehicle({...newVehicle, modelId: parseInt(value) || 0})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn model xe" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.length === 0 ? (
+                      <SelectItem value="" disabled>Đang tải models...</SelectItem>
+                    ) : (
+                      models.map((model) => (
+                        <SelectItem key={model.id} value={model.id.toString()}>
+                          {model.name} ({model.type})
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">Chọn model xe từ danh sách</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Pin Level (%)</label>
@@ -382,16 +409,27 @@ const AdminVehicles = () => {
                 <p className="text-xs text-gray-500 mt-1">Pin level từ 0 đến 100%</p>
               </div>
               <div>
-                <label className="text-sm font-medium">ID Trạm <span className="text-red-500">*</span></label>
-                <Input 
-                  type="number"
-                  placeholder="Nhập ID trạm (VD: 1, 2, 3)" 
-                  value={newVehicle.stationId || ''}
-                  onChange={(e) => setNewVehicle({...newVehicle, stationId: parseInt(e.target.value) || 0})}
-                  min="1"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Nhập ID trạm để gán xe</p>
+                <label className="text-sm font-medium">Trạm <span className="text-red-500">*</span></label>
+                <Select 
+                  value={newVehicle.stationId > 0 ? newVehicle.stationId.toString() : ''}
+                  onValueChange={(value) => setNewVehicle({...newVehicle, stationId: parseInt(value) || 0})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Chọn trạm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {stations.length === 0 ? (
+                      <SelectItem value="" disabled>Đang tải trạm...</SelectItem>
+                    ) : (
+                      stations.map((station) => (
+                        <SelectItem key={station.id} value={station.id.toString()}>
+                          {station.name} - {station.address}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500 mt-1">Chọn trạm từ danh sách</p>
               </div>
               <div>
                 <label className="text-sm font-medium">Giá/ngày (VNĐ) <span className="text-red-500">*</span></label>
@@ -550,26 +588,50 @@ const AdminVehicles = () => {
                    <p className="text-xs text-gray-500 mt-1">Mã xe (biển số)</p>
                  </div>
                 <div>
-                  <label className="text-sm font-medium">ID Model <span className="text-red-500">*</span></label>
-                  <Input 
-                    type="number"
-                    placeholder="Nhập ID model" 
-                    value={editingVehicle.modelId || ''}
-                    onChange={(e) => setEditingVehicle({...editingVehicle, modelId: parseInt(e.target.value) || 0})}
-                    min="1"
-                    required
-                  />
+                  <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
+                  <Select 
+                    value={editingVehicle.modelId && editingVehicle.modelId > 0 ? editingVehicle.modelId.toString() : ''}
+                    onValueChange={(value) => setEditingVehicle({...editingVehicle, modelId: parseInt(value) || 0})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn model xe" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.length === 0 ? (
+                        <SelectItem value="" disabled>Đang tải models...</SelectItem>
+                      ) : (
+                        models.map((model) => (
+                          <SelectItem key={model.id} value={model.id.toString()}>
+                            {model.name} ({model.type})
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">Chọn model xe từ danh sách</p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">ID Trạm <span className="text-red-500">*</span></label>
-                  <Input 
-                    type="number"
-                    placeholder="Nhập ID trạm" 
-                    value={editingVehicle.stationId || ''}
-                    onChange={(e) => setEditingVehicle({...editingVehicle, stationId: parseInt(e.target.value) || 0})}
-                    min="1"
-                    required
-                  />
+                  <label className="text-sm font-medium">Trạm <span className="text-red-500">*</span></label>
+                  <Select 
+                    value={editingVehicle.stationId && editingVehicle.stationId > 0 ? editingVehicle.stationId.toString() : ''}
+                    onValueChange={(value) => setEditingVehicle({...editingVehicle, stationId: parseInt(value) || 0})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Chọn trạm" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {stations.length === 0 ? (
+                        <SelectItem value="" disabled>Đang tải trạm...</SelectItem>
+                      ) : (
+                        stations.map((station) => (
+                          <SelectItem key={station.id} value={station.id.toString()}>
+                            {station.name} - {station.address}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">Chọn trạm từ danh sách</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Giá/ngày (VNĐ)</label>
@@ -613,82 +675,6 @@ const AdminVehicles = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Thẻ Thống Kê */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng Xe</CardTitle>
-            <Car className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{vehicles.length}</div>
-            <p className="text-xs text-muted-foreground">
-              +3 từ tháng trước
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sẵn Sàng</CardTitle>
-            <Battery className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(() => {
-                const availableCount = vehicles.filter(v => v.status?.toUpperCase() === 'AVAILABLE').length;
-                console.log('Available vehicles count:', availableCount);
-                console.log('Available vehicles:', vehicles.filter(v => v.status?.toUpperCase() === 'AVAILABLE'));
-                return availableCount;
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {vehicles.length > 0 ? Math.round((vehicles.filter(v => v.status?.toUpperCase() === 'AVAILABLE').length / vehicles.length) * 100) : 0}% tổng xe
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đang Thuê</CardTitle>
-            <MapPin className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(() => {
-                const rentedCount = vehicles.filter(v => v.status?.toUpperCase() === 'RENTED').length;
-                console.log('Rented vehicles count:', rentedCount);
-                console.log('Rented vehicles:', vehicles.filter(v => v.status?.toUpperCase() === 'RENTED'));
-                return rentedCount;
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Đang được sử dụng
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Bảo Trì</CardTitle>
-            <Wrench className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {(() => {
-                const maintenanceCount = vehicles.filter(v => v.status?.toUpperCase() === 'MAINTENANCE').length;
-                console.log('Maintenance vehicles count:', maintenanceCount);
-                console.log('Maintenance vehicles:', vehicles.filter(v => v.status?.toUpperCase() === 'MAINTENANCE'));
-                return maintenanceCount;
-              })()}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Cần chú ý
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Bảng Danh Sách Xe */}

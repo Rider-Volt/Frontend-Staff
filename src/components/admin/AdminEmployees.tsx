@@ -28,7 +28,6 @@ import {
   Search, 
   Plus, 
   MoreHorizontal, 
-  Users, 
   Edit, 
   Trash2, 
   UserCheck,
@@ -162,67 +161,6 @@ const AdminEmployees = () => {
             </div>
           </DialogContent>
         </Dialog>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tổng Nhân Viên</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{employees.length}</div>
-            <p className="text-xs text-muted-foreground">
-              Tổng số nhân viên
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đang Hoạt Động</CardTitle>
-            <UserCheck className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {employees.filter(e => e.status?.toUpperCase() === 'ACTIVE').length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {employees.length > 0 ? Math.round((employees.filter(e => e.status?.toUpperCase() === 'ACTIVE').length / employees.length) * 100) : 0}% tổng nhân viên
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tạm Nghỉ</CardTitle>
-            <UserX className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {employees.filter(e => e.status === 'INACTIVE').length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Không hoạt động
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Đang Làm Việc</CardTitle>
-            <MapPin className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {employees.length}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Tổng số nhân viên
-            </p>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Employees Table */}

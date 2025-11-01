@@ -230,11 +230,11 @@ const AdminBillings: React.FC = () => {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-gray-500">Pickup thực tế</div>
+                  <div className="text-sm text-gray-500">Nhận xe thực tế</div>
                   <div className="font-semibold">{viewBilling.actualPickupAt ? new Date(viewBilling.actualPickupAt).toLocaleString('vi-VN') : '—'}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Return thực tế</div>
+                  <div className="text-sm text-gray-500">Trả xe thực tế</div>
                   <div className="font-semibold">{viewBilling.actualReturnAt ? new Date(viewBilling.actualReturnAt).toLocaleString('vi-VN') : '—'}</div>
                 </div>
               </div>

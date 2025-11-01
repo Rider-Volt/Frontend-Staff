@@ -2,7 +2,8 @@ import { useMemo, useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { MapPin, Plus, Pencil, Trash2 } from 'lucide-react';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
@@ -13,6 +14,7 @@ import {
   deleteStation,
   type Station as StationData 
 } from '@/services/adminservice/adminStationService';
+import { getAllStaff, type Staff } from '@/services/adminservice/adminEmployeeService';
 
 interface Station {
   id: string;
@@ -255,6 +257,8 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
   const [form, setForm] = useState<Station>(
     editing || defaultStation
   );
+  const [staffList, setStaffList] = useState<Staff[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState(false);
   const { toast } = useToast();
 
   const isEdit = Boolean(editing);
@@ -262,6 +266,26 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
   useEffect(() => {
     setForm(editing || defaultStation);
   }, [editing]);
+
+  useEffect(() => {
+    const loadStaff = async () => {
+      try {
+        setLoadingStaff(true);
+        const staff = await getAllStaff();
+        setStaffList(staff);
+      } catch (error) {
+        console.error('Error loading staff:', error);
+        toast({
+          title: "Cảnh báo",
+          description: "Không thể tải danh sách nhân viên",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingStaff(false);
+      }
+    };
+    loadStaff();
+  }, []);
 
   const handleChange = (key: keyof Station, value: string | number) => {
     setForm(prev => ({ ...prev, [key]: value } as Station));
@@ -293,6 +317,9 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
     <DialogContent className="sm:max-w-[560px]">
       <DialogHeader>
         <DialogTitle>{isEdit ? 'Cập nhật điểm thuê' : 'Thêm điểm thuê mới'}</DialogTitle>
+        <DialogDescription>
+          {isEdit ? 'Cập nhật thông tin điểm thuê' : 'Nhập thông tin để tạo điểm thuê mới'}
+        </DialogDescription>
       </DialogHeader>
       <div className="space-y-3 py-2">
         {isEdit && (
@@ -327,13 +354,29 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
         </div>
         <div>
           <label className="text-sm font-medium text-gray-700">ID Nhân viên (tùy chọn)</label>
-          <Input 
-            type="number"
-            placeholder="VD: 1 (để trống nếu chưa gán nhân viên)" 
-            value={form.staffId || ''} 
-            onChange={(e) => handleChange('staffId', e.target.value ? Number(e.target.value) : 0)}
-            className="mt-1"
-          />
+          <Select
+            value={form.staffId && form.staffId > 0 ? form.staffId.toString() : 'none'}
+            onValueChange={(value) => handleChange('staffId', value === 'none' ? 0 : Number(value))}
+            disabled={loadingStaff}
+          >
+            <SelectTrigger className="mt-1">
+              <SelectValue placeholder="Chọn nhân viên (để trống nếu chưa gán nhân viên)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none"> nhân viên</SelectItem>
+              {loadingStaff ? (
+                <SelectItem value="loading" disabled>Đang tải danh sách nhân viên...</SelectItem>
+              ) : staffList.length === 0 ? (
+                <SelectItem value="empty" disabled>Không có nhân viên</SelectItem>
+              ) : (
+                staffList.map((staff) => (
+                  <SelectItem key={staff.id} value={staff.id.toString()}>
+                    {staff.name} ({staff.email}){staff.stationName ? ` - ${staff.stationName}` : ''}
+                  </SelectItem>
+                ))
+              )}
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <DialogFooter>
