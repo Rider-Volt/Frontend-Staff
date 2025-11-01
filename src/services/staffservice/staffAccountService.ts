@@ -78,9 +78,8 @@ export async function updateCustomerAccountStatus(
 ): Promise<CustomerAccount> {
   console.log('Updating customer account status:', { accountId, status });
   
-  const apiStatus = String(status).toLowerCase();
-  // Some backends expect a raw JSON string for enum updates
-  const requestData = JSON.stringify(apiStatus);
+  // Send proper JSON object with status field
+  const requestData = JSON.stringify({ status });
   
   const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {
     method: "PATCH",
@@ -157,10 +156,9 @@ export async function updateRenterStatus(
   accountId: number,
   status: StaffAccountStatus
 ): Promise<RenterAccount> {
-  const apiStatus = String(status).toLowerCase();
-  // Send raw JSON string to avoid backend JSON binding issues
-  const requestBody = JSON.stringify(apiStatus);
-  console.log('Updating renter status:', { accountId, status, apiStatus, requestBody: apiStatus });
+  // Send proper JSON object with status field
+  const requestBody = JSON.stringify({ status });
+  console.log('Updating renter status:', { accountId, status, requestBody });
   const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {
     method: "PATCH",
     headers: {

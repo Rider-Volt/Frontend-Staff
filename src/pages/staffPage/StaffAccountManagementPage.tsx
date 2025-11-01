@@ -18,7 +18,7 @@ const StaffAccountManagementPage = () => {
                 <Users className="h-8 w-8 text-blue-500 mr-3" />
                 Quản Lý Khách Hàng
               </h1>
-              <p className="text-gray-600">Xem danh sách khách hàng (renter)</p>
+              <p className="text-gray-600">Xem danh sách khách hàng </p>
             </div>
             {/* Buttons removed as requested */}
           </div>

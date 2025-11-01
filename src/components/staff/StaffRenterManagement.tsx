@@ -45,6 +45,7 @@ const StaffRenterManagement: React.FC = () => {
     if (s === 'ACTIVE') return <Badge className="bg-green-100 text-green-700">Hoạt động</Badge>;
     if (s === 'INACTIVE') return <Badge className="bg-gray-100 text-gray-700">Không hoạt động</Badge>;
     if (s === 'BANNED') return <Badge className="bg-red-100 text-red-700">Bị cấm</Badge>;
+    if (s === 'VERIFIED') return <Badge className="bg-green-100 text-green-700">Đã xác minh</Badge>;
     return <Badge variant="secondary">{status || 'N/A'}</Badge>;
   };
 
@@ -113,20 +114,22 @@ const StaffRenterManagement: React.FC = () => {
                     <TableCell className="font-medium">{r.riskScore ?? 0}</TableCell>
                     <TableCell>{statusBadge(r.status)}</TableCell>
                     <TableCell className="text-right">
-                      <Select
-                        value={(r.status as StaffAccountStatus) || 'ACTIVE'}
-                        onValueChange={(v: StaffAccountStatus) => handleChangeStatus(r.id, v)}
-                        disabled={updatingId === r.id}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue placeholder="Chọn trạng thái" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                          <SelectItem value="INACTIVE">INACTIVE</SelectItem>
-                          <SelectItem value="VERIFIED">VERIFIED</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <div className="flex justify-end">
+                        <Select
+                          value={(r.status as StaffAccountStatus) || 'ACTIVE'}
+                          onValueChange={(v: StaffAccountStatus) => handleChangeStatus(r.id, v)}
+                          disabled={updatingId === r.id}
+                        >
+                          <SelectTrigger className="w-40">
+                            <SelectValue placeholder="Chọn trạng thái" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ACTIVE">Hoạt động</SelectItem>
+                            <SelectItem value="INACTIVE">Không hoạt động</SelectItem>
+                            <SelectItem value="VERIFIED">Đã xác minh</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -97,17 +97,6 @@ const StaffVehiclesPage = () => {
     setIsEditDialogOpen(true);
   };
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const total = vehicles.length;
-    const available = vehicles.filter(v => v.status === 'AVAILABLE').length;
-    const rented = vehicles.filter(v => v.status === 'RENTED').length;
-    const maintenance = vehicles.filter(v => v.status === 'MAINTENANCE').length;
-    const availablePercent = total > 0 ? Math.round((available / total) * 100) : 0;
-    
-    return { total, available, rented, maintenance, availablePercent };
-  }, [vehicles]);
-
   if (loading && vehicles.length === 0) {
     return (
       <StaffLayout>
@@ -135,53 +124,6 @@ const StaffVehiclesPage = () => {
               className="pl-10"
             />
           </div>
-        </div>
-
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="shadow-sm hover:shadow-md transition">
-            <CardContent className="p-6 relative">
-              <Car className="absolute top-4 right-4 h-8 w-8 text-gray-400" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Tổng Xe</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.total}</p>
-                <p className="text-xs text-gray-500">Tổng số xe trong trạm</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition">
-            <CardContent className="p-6 relative">
-              <Battery className="absolute top-4 right-4 h-8 w-8 text-green-500" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Sẵn Sàng</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.available}</p>
-                <p className="text-xs text-gray-500">{stats.availablePercent}% tổng xe</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition">
-            <CardContent className="p-6 relative">
-              <MapPin className="absolute top-4 right-4 h-8 w-8 text-blue-500" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Đang Thuê</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.rented}</p>
-                <p className="text-xs text-gray-500">Đang được sử dụng</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm hover:shadow-md transition">
-            <CardContent className="p-6 relative">
-              <Wrench className="absolute top-4 right-4 h-8 w-8 text-orange-500" />
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-gray-600">Bảo Trì</p>
-                <p className="text-3xl font-bold text-gray-900">{stats.maintenance}</p>
-                <p className="text-xs text-gray-500">Cần chú ý</p>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Vehicle List */}

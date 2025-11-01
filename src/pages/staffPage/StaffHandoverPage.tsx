@@ -405,16 +405,18 @@ const StaffHandoverPage = () => {
                     <div key={position} className="flex flex-col items-stretch gap-2">
                       <Button
                         variant="outline"
-                        className="h-32 flex flex-col gap-2"
+                        className="h-32 flex flex-col gap-2 p-0 overflow-hidden"
                         onClick={() => handlePickDelivery(position)}
                       >
                         {deliveryPhotos[position] ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={deliveryPhotos[position]} alt={position} className="h-16 w-full object-cover rounded" />
+                          <img src={deliveryPhotos[position]} alt={position} className="h-full w-full object-contain" />
                         ) : (
-                          <Camera className="h-6 w-6" />
+                          <div className="flex flex-col items-center justify-center h-full">
+                            <Camera className="h-6 w-6" />
+                            <span>{position}</span>
+                          </div>
                         )}
-                        <span>{position}</span>
                       </Button>
                       <div className="flex justify-end">
                         <Button
@@ -557,16 +559,18 @@ const StaffHandoverPage = () => {
                     <div key={position} className="flex flex-col items-stretch gap-2">
                       <Button
                         variant="outline"
-                        className="h-32 flex flex-col gap-2"
+                        className="h-32 flex flex-col gap-2 p-0 overflow-hidden"
                         onClick={() => handlePickReturn(position)}
                       >
                         {returnPhotos[position] ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={returnPhotos[position]} alt={position} className="h-16 w-full object-cover rounded" />
+                          <img src={returnPhotos[position]} alt={position} className="h-full w-full object-contain" />
                         ) : (
-                          <Camera className="h-6 w-6" />
+                          <div className="flex flex-col items-center justify-center h-full">
+                            <Camera className="h-6 w-6" />
+                            <span>{position}</span>
+                          </div>
                         )}
-                        <span>{position}</span>
                       </Button>
                       <div className="flex justify-end">
                         <Button

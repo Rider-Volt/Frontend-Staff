@@ -5,13 +5,13 @@ export type BillingStatus = "PENDING" | "PAYED" | "CANCELLED" | "RENTING" | "APP
 export interface BillingResponse {
   id: number;
   rentedDay: number;
-  bookingTime?: string; // ISO
-  startTime?: string; // ISO (legacy)
-  endTime?: string; // ISO (legacy)
-  plannedStartDate?: string; // e.g. 2025-10-31
-  plannedEndDate?: string; // e.g. 2025-10-31
-  actualPickupAt?: string; // ISO – thời điểm nhận thực tế (nếu có)
-  actualReturnAt?: string; // ISO – thời điểm trả thực tế (nếu có)
+  bookingTime?: string; 
+  startTime?: string; 
+  endTime?: string; 
+  plannedStartDate?: string; 
+  plannedEndDate?: string; 
+  actualPickupAt?: string;
+  actualReturnAt?: string; 
   preImage?: string | null;
   finalImage?: string | null;
   status: BillingStatus;
@@ -106,8 +106,7 @@ export async function getBillingsByStatus(status: BillingStatus): Promise<Billin
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền xem danh sách đơn hàng.");
     }
-    // Some environments might not support this endpoint yet. Gracefully fallback
-    // to an empty list to avoid breaking the UI, and let callers handle no-data states.
+    
     if (resp.status === 404) {
       return [] as BillingResponse[];
     }
