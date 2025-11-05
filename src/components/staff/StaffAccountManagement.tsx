@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,9 +48,8 @@ import {
 import { 
   getAllCustomerAccounts, 
   updateCustomerAccountStatus,
-  getCustomerAccountById,
   type CustomerAccount
-} from '@/services/adminservice/adminCustomerService';
+} from '@/services/staffservice/staffAccountService';
 
 const StaffAccountManagement = () => {
   const [accounts, setAccounts] = useState<CustomerAccount[]>([]);
@@ -63,105 +62,18 @@ const StaffAccountManagement = () => {
   const [updatingAccount, setUpdatingAccount] = useState<CustomerAccount | null>(null);
   const [newStatus, setNewStatus] = useState<"ACTIVE" | "INACTIVE" | "BANNED">("ACTIVE");
 
-  // Mock data cho danh sách tài khoản khách hàng
-  const mockAccounts: CustomerAccount[] = [
-    {
-      id: 1,
-      fullName: "Nguyễn Văn An",
-      email: "nguyenvanan@example.com",
-      phone: "0123456789",
-      status: "ACTIVE",
-      totalRentals: 15,
-      totalSpent: 2500000
-    },
-    {
-      id: 2,
-      fullName: "Trần Thị Bình",
-      email: "tranthibinh@example.com",
-      phone: "0987654321",
-      status: "INACTIVE",
-      totalRentals: 8,
-      totalSpent: 1200000
-    },
-    {
-      id: 3,
-      fullName: "Lê Văn Cường",
-      email: "levancuong@example.com",
-      phone: "0555666777",
-      status: "BANNED",
-      totalRentals: 3,
-      totalSpent: 450000
-    },
-    {
-      id: 4,
-      fullName: "Phạm Thị Dung",
-      email: "phamthidung@example.com",
-      phone: "0333444555",
-      status: "ACTIVE",
-      totalRentals: 22,
-      totalSpent: 3800000
-    },
-    {
-      id: 5,
-      fullName: "Hoàng Văn Em",
-      email: "hoangvanem@example.com",
-      phone: "0777888999",
-      status: "INACTIVE",
-      totalRentals: 6,
-      totalSpent: 900000
-    },
-    {
-      id: 6,
-      fullName: "Vũ Thị Phương",
-      email: "vuthiphuong@example.com",
-      phone: "0444555666",
-      status: "ACTIVE",
-      totalRentals: 12,
-      totalSpent: 1800000
-    },
-    {
-      id: 7,
-      fullName: "Đặng Văn Giang",
-      email: "dangvangiang@example.com",
-      phone: "0666777888",
-      status: "BANNED",
-      totalRentals: 2,
-      totalSpent: 300000
-    },
-    {
-      id: 8,
-      fullName: "Bùi Thị Hoa",
-      email: "buithihoa@example.com",
-      phone: "0888999000",
-      status: "ACTIVE",
-      totalRentals: 18,
-      totalSpent: 3200000
-    }
-  ];
-
-  // Tải danh sách tài khoản (sử dụng mock data)
+  // Tải danh sách tài khoản
   useEffect(() => {
     const loadAccounts = async () => {
       try {
         setLoading(true);
         setError(null);
-        
-        // Thử gọi API trước
-        try {
-          const data = await getAllCustomerAccounts();
-          setAccounts(data);
-          console.log('Customer accounts loaded from API:', data);
-        } catch (apiError) {
-          console.log('API failed, using mock data:', apiError);
-          // Nếu API fail, sử dụng mock data
-          setAccounts(mockAccounts);
-          console.log('Using mock customer accounts:', mockAccounts);
-        }
-      } catch (error) {
-        console.error('Error loading customer accounts:', error);
-        // Fallback về mock data
-        setAccounts(mockAccounts);
-        console.log('Fallback to mock data due to error');
+        const data = await getAllCustomerAccounts();
+        setAccounts(data);
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Lỗi khi tải danh sách tài khoản';
+        setError(errorMessage);
+        console.error('Error loading customer accounts:', err);
       } finally {
         setLoading(false);
       }
@@ -171,35 +83,35 @@ const StaffAccountManagement = () => {
   }, []);
 
   // Lọc tài khoản dựa trên từ khóa tìm kiếm
-  const filteredAccounts = accounts.filter(account =>
-    account.id.toString().includes(searchTerm.toLowerCase()) ||
-    account.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    account.phone.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAccounts = useMemo(() => {
+    const query = searchTerm.toLowerCase();
+    return accounts.filter(account =>
+      account.id.toString().includes(query) ||
+      account.fullName.toLowerCase().includes(query) ||
+      account.email.toLowerCase().includes(query) ||
+      account.phone.toLowerCase().includes(query)
+    );
+  }, [accounts, searchTerm]);
+
+  // Tính toán thống kê
+  const stats = useMemo(() => ({
+    total: accounts.length,
+    active: accounts.filter(acc => acc.status === 'ACTIVE').length,
+    inactive: accounts.filter(acc => acc.status === 'INACTIVE').length,
+    banned: accounts.filter(acc => acc.status === 'BANNED').length,
+  }), [accounts]);
 
   // Refresh danh sách tài khoản
   const handleRefresh = async () => {
     try {
       setLoading(true);
       setError(null);
-      
-      // Thử gọi API trước
-      try {
-        const data = await getAllCustomerAccounts();
-        setAccounts(data);
-        console.log('Customer accounts refreshed from API:', data);
-      } catch (apiError) {
-        console.log('API refresh failed, using mock data:', apiError);
-        // Nếu API fail, sử dụng mock data
-        setAccounts(mockAccounts);
-        console.log('Using mock customer accounts on refresh:', mockAccounts);
-      }
-    } catch (error) {
-      console.error('Error refreshing customer accounts:', error);
-      // Fallback về mock data
-      setAccounts(mockAccounts);
-      console.log('Fallback to mock data on refresh due to error');
+      const data = await getAllCustomerAccounts();
+      setAccounts(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi khi làm mới danh sách tài khoản';
+      setError(errorMessage);
+      console.error('Error refreshing customer accounts:', err);
     } finally {
       setLoading(false);
     }
@@ -210,25 +122,14 @@ const StaffAccountManagement = () => {
     if (!updatingAccount) return;
     
     try {
-      // Thử gọi API trước
-      try {
-        const updatedAccount = await updateCustomerAccountStatus(updatingAccount.id, newStatus);
-        setAccounts(accounts.map(acc => acc.id === updatingAccount.id ? updatedAccount : acc));
-        console.log('Account status updated via API:', updatedAccount);
-      } catch (apiError) {
-        console.log('API update failed, updating mock data locally:', apiError);
-        // Nếu API fail, cập nhật mock data locally
-        const updatedAccount = { ...updatingAccount, status: newStatus };
-        setAccounts(accounts.map(acc => acc.id === updatingAccount.id ? updatedAccount : acc));
-        console.log('Account status updated locally:', updatedAccount);
-      }
-      
+      const updatedAccount = await updateCustomerAccountStatus(updatingAccount.id, newStatus);
+      setAccounts(accounts.map(acc => acc.id === updatingAccount.id ? updatedAccount : acc));
       setIsStatusDialogOpen(false);
       setUpdatingAccount(null);
-      alert('Cập nhật trạng thái tài khoản thành công!');
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái tài khoản';
+      alert(errorMessage);
       console.error('Error updating account status:', err);
-      alert(err instanceof Error ? err.message : 'Lỗi khi cập nhật trạng thái tài khoản');
     }
   };
 
@@ -321,7 +222,7 @@ const StaffAccountManagement = () => {
             <Users className="h-5 w-5 text-blue-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{accounts.length}</div>
+            <div className="text-3xl font-bold text-blue-600">{stats.total}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Tất cả tài khoản khách hàng
             </p>
@@ -335,7 +236,7 @@ const StaffAccountManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">
-              {accounts.filter(acc => acc.status === 'ACTIVE').length}
+              {stats.active}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Tài khoản đang hoạt động
@@ -350,7 +251,7 @@ const StaffAccountManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-orange-600">
-              {accounts.filter(acc => acc.status === 'INACTIVE').length}
+              {stats.inactive}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Tài khoản tạm khóa
@@ -365,7 +266,7 @@ const StaffAccountManagement = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-red-600">
-              {accounts.filter(acc => acc.status === 'BANNED').length}
+              {stats.banned}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Tài khoản bị cấm
@@ -394,7 +295,7 @@ const StaffAccountManagement = () => {
                   <TableHead className="font-semibold">Lượt Thuê</TableHead>
                   <TableHead className="font-semibold">Tổng Chi Tiêu</TableHead>
                   <TableHead className="font-semibold">Trạng Thái</TableHead>
-                  <TableHead className="text-right font-semibold">Hành Động</TableHead>
+                  <TableHead className="text-right font-semibold">Cập nhập</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

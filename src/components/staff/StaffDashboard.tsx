@@ -9,7 +9,7 @@ import heroImage from "@/assets/hero-station.jpg";
 import accountService from "@/services/accountService";
 import { getStaffVehicles, type StaffVehicle as StaffVehicleApi } from "@/services/staffservice/staffVehicleService";
 
-// StatCard component moved here
+// Component StatCard được chuyển vào đây
 interface StatCardProps {
   title: string;
   value: string | number;
@@ -51,7 +51,7 @@ const StatCard = ({ title, value, icon: Icon, trend, variant = "default" }: Stat
   );
 };
 
-// Helper to map API status to UI status used in `StaffVehicle`
+// Hàm hỗ trợ chuyển đổi trạng thái API sang trạng thái UI được sử dụng trong `StaffVehicle`
 function mapStatusToCardStatus(apiStatus?: string): "available" | "booked" | "rented" | "maintenance" {
   const normalized = (apiStatus || "").toUpperCase();
   if (normalized === "AVAILABLE") return "available";
@@ -142,7 +142,7 @@ const StaffDashboard = () => {
             <StatCard title="Xe sẵn sàng" value={availableCount} icon={Car} variant="success" trend={{ value: 0, isPositive: true }} />
             <StatCard title="Xe đang thuê" value={rentedCount} icon={Clock} variant="primary" />
             <StatCard title="Pin trung bình" value={`${averagePin}%`} icon={Battery} variant="warning" />
-            <StatCard title="XE sự cố" value={maintenanceCount} icon={AlertCircle} variant="default" />
+            <StatCard title="XE bảo trì" value={maintenanceCount} icon={AlertCircle} variant="default" />
           </div>
 
           <Card>

@@ -12,8 +12,8 @@ export interface StaffVehicle {
   imageUrl: string;
   stationName: string;
   stationAddress: string;
-  stationLatitude: number;
-  stationLongitude: number;
+  stationLatitude?: number;
+  stationLongitude?: number;
   currentPin: number;
 }
 
@@ -143,6 +143,18 @@ export function getVehicleStatusInfo(status: string) {
         className: 'bg-yellow-100 text-yellow-800', 
         text: 'Bảo trì' 
       };
+    case 'RESERVED':
+      return { 
+        variant: 'secondary' as const, 
+        className: 'bg-purple-100 text-purple-800', 
+        text: 'Đã đặt trước' 
+      };
+    case 'LOCKED':
+      return { 
+        variant: 'destructive' as const, 
+        className: 'bg-red-100 text-red-800', 
+        text: 'Đã khóa' 
+      };
    
     default:
       return { 
@@ -152,3 +164,6 @@ export function getVehicleStatusInfo(status: string) {
       };
   }
 }
+
+// Loại trạng thái xe dựa trên tài liệu API
+export type VehicleStatus = 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'RESERVED' | 'LOCKED';

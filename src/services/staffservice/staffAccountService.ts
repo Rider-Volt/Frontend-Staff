@@ -78,7 +78,7 @@ export async function updateCustomerAccountStatus(
 ): Promise<CustomerAccount> {
   console.log('Updating customer account status:', { accountId, status });
   
-  // Send proper JSON object with status field
+  // Gửi đối tượng JSON với trường `status`
   const requestData = JSON.stringify({ status });
   
   const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {
@@ -156,7 +156,7 @@ export async function updateRenterStatus(
   accountId: number,
   status: StaffAccountStatus
 ): Promise<RenterAccount> {
-  // Send proper JSON object with status field
+  // Gửi đối tượng JSON với trường `status`
   const requestBody = JSON.stringify({ status });
   console.log('Updating renter status:', { accountId, status, requestBody });
   const resp = await fetch(`${API_BASE}/staff/accounts/${accountId}/status`, {

@@ -15,6 +15,8 @@ import {
   checkInByBillingId,
   updateFinalImageFile,
   inspectReturnedVehicle,
+  uploadContractBeforeImage,
+  uploadContractAfterImage,
   type BillingResponse,
 } from "@/services/staffservice/staffBillingService";
 import {
@@ -25,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Checklist for damage was removed as requested
+// Danh sách kiểm tra hư hỏng đã được loại bỏ theo yêu cầu
 
 const StaffHandoverPage = () => {
   const [activeTab, setActiveTab] = useState("delivery");
@@ -37,47 +39,39 @@ const StaffHandoverPage = () => {
   const [selectedBillingId, setSelectedBillingId] = useState<string>("");
   const [preImageUrl, setPreImageUrl] = useState("");
   const [deliveryNote, setDeliveryNote] = useState("");
+  const [contractBeforeImage, setContractBeforeImage] = useState<File | null>(null);
+  const [contractBeforeImagePreview, setContractBeforeImagePreview] = useState<string>("");
+  const [isUploadingContract, setIsUploadingContract] = useState(false);
+  const [contractAfterImage, setContractAfterImage] = useState<File | null>(null);
+  const [contractAfterImagePreview, setContractAfterImagePreview] = useState<string>("");
+  const [isUploadingContractAfter, setIsUploadingContractAfter] = useState(false);
 
-  // Local previews for library-selected photos (delivery)
-  const deliveryPositions = ["Trước", "Sau", "Trái", "Phải"] as const;
-  type DeliveryPosition = typeof deliveryPositions[number];
-  const [deliveryPhotos, setDeliveryPhotos] = useState<Record<DeliveryPosition, string>>({
-    "Trước": "",
-    "Sau": "",
-    "Trái": "",
-    "Phải": "",
-  });
-  const [deliveryFiles, setDeliveryFiles] = useState<Record<DeliveryPosition, File | null>>({
-    "Trước": null,
-    "Sau": null,
-    "Trái": null,
-    "Phải": null,
-  });
+  // Xem trước ảnh đã chọn từ thư viện (giao xe)
+  const [deliveryPhoto, setDeliveryPhoto] = useState<string>("");
+  const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
 
-  const handlePickDelivery = (position: DeliveryPosition) => {
-    const inputId = `delivery-photo-input-${position}`;
+  const handlePickDelivery = () => {
+    const inputId = `delivery-photo-input`;
     const el = document.getElementById(inputId) as HTMLInputElement | null;
     if (el) el.click();
   };
 
-  const onDeliveryFileChange = (position: DeliveryPosition, file?: File | null) => {
+  const onDeliveryFileChange = (file?: File | null) => {
     if (!file) return;
     const objectUrl = URL.createObjectURL(file);
-    setDeliveryPhotos((prev) => {
-      const prevUrl = prev[position];
-      if (prevUrl) URL.revokeObjectURL(prevUrl);
-      return { ...prev, [position]: objectUrl };
-    });
-    setDeliveryFiles((prev) => ({ ...prev, [position]: file }));
+    if (deliveryPhoto) {
+      URL.revokeObjectURL(deliveryPhoto);
+    }
+    setDeliveryPhoto(objectUrl);
+    setDeliveryFile(file);
   };
 
-  const clearDeliveryPhoto = (position: DeliveryPosition) => {
-    setDeliveryPhotos((prev) => {
-      const prevUrl = prev[position];
-      if (prevUrl) URL.revokeObjectURL(prevUrl);
-      return { ...prev, [position]: "" };
-    });
-    setDeliveryFiles((prev) => ({ ...prev, [position]: null }));
+  const clearDeliveryPhoto = () => {
+    if (deliveryPhoto) {
+      URL.revokeObjectURL(deliveryPhoto);
+    }
+    setDeliveryPhoto("");
+    setDeliveryFile(null);
   };
 
   const selectedBilling: BillingResponse | undefined = useMemo(
@@ -93,44 +87,32 @@ const StaffHandoverPage = () => {
   const [penaltyCost, setPenaltyCost] = useState<string>("0");
   const [returnNote, setReturnNote] = useState("");
 
-  // Local previews for library-selected photos (return)
-  const [returnPhotos, setReturnPhotos] = useState<Record<DeliveryPosition, string>>({
-    "Trước": "",
-    "Sau": "",
-    "Trái": "",
-    "Phải": "",
-  });
-  const [returnFiles, setReturnFiles] = useState<Record<DeliveryPosition, File | null>>({
-    "Trước": null,
-    "Sau": null,
-    "Trái": null,
-    "Phải": null,
-  });
+  // Xem trước ảnh đã chọn từ thư viện (trả xe)
+  const [returnPhoto, setReturnPhoto] = useState<string>("");
+  const [returnFile, setReturnFile] = useState<File | null>(null);
 
-  const handlePickReturn = (position: DeliveryPosition) => {
-    const inputId = `return-photo-input-${position}`;
+  const handlePickReturn = () => {
+    const inputId = `return-photo-input`;
     const el = document.getElementById(inputId) as HTMLInputElement | null;
     if (el) el.click();
   };
 
-  const onReturnFileChange = (position: DeliveryPosition, file?: File | null) => {
+  const onReturnFileChange = (file?: File | null) => {
     if (!file) return;
     const objectUrl = URL.createObjectURL(file);
-    setReturnPhotos((prev) => {
-      const prevUrl = prev[position];
-      if (prevUrl) URL.revokeObjectURL(prevUrl);
-      return { ...prev, [position]: objectUrl };
-    });
-    setReturnFiles((prev) => ({ ...prev, [position]: file }));
+    if (returnPhoto) {
+      URL.revokeObjectURL(returnPhoto);
+    }
+    setReturnPhoto(objectUrl);
+    setReturnFile(file);
   };
 
-  const clearReturnPhoto = (position: DeliveryPosition) => {
-    setReturnPhotos((prev) => {
-      const prevUrl = prev[position];
-      if (prevUrl) URL.revokeObjectURL(prevUrl);
-      return { ...prev, [position]: "" };
-    });
-    setReturnFiles((prev) => ({ ...prev, [position]: null }));
+  const clearReturnPhoto = () => {
+    if (returnPhoto) {
+      URL.revokeObjectURL(returnPhoto);
+    }
+    setReturnPhoto("");
+    setReturnFile(null);
   };
 
   const selectedReturnBilling: BillingResponse | undefined = useMemo(
@@ -163,7 +145,7 @@ const StaffHandoverPage = () => {
     }
   };
 
-  // No damage checklist interactions required
+  // Không cần tương tác với danh sách kiểm tra hư hỏng
 
   const handleSearchByPhone = async () => {
     if (!phoneQuery.trim()) {
@@ -193,31 +175,142 @@ const StaffHandoverPage = () => {
     }
   };
 
+  const handleContractBeforeImageChange = (file?: File | null) => {
+    if (!file) return;
+    
+    // Tạo preview ngay lập tức
+    const objectUrl = URL.createObjectURL(file);
+    if (contractBeforeImagePreview) {
+      URL.revokeObjectURL(contractBeforeImagePreview);
+    }
+    
+    // Set state để preview hiển thị ngay
+    setContractBeforeImagePreview(objectUrl);
+    setContractBeforeImage(file);
+  };
+
+  const handleUploadContractBeforeImage = async () => {
+    if (!selectedBilling) {
+      toast.error("Chọn hóa đơn trước");
+      return;
+    }
+    if (!contractBeforeImage) {
+      toast.error("Chọn ảnh hợp đồng trước khi ký");
+      return;
+    }
+    
+    try {
+      setIsUploadingContract(true);
+      const updatedBilling = await uploadContractBeforeImage(selectedBilling.id, contractBeforeImage);
+      
+      // Cập nhật preview từ URL backend nếu có
+      if (updatedBilling.contractBeforeImage && contractBeforeImagePreview?.startsWith('blob:')) {
+        const imageUrl = updatedBilling.contractBeforeImage;
+        URL.revokeObjectURL(contractBeforeImagePreview);
+        setContractBeforeImagePreview(imageUrl);
+      }
+      
+      setBillingsByPhone(prev => 
+        prev.map(b => b.id === updatedBilling.id ? updatedBilling : b)
+      );
+      toast.success(" ảnh hợp đồng thành công!");
+    } catch (err: any) {
+      console.error(" Lỗi ảnh hợp đồng:", err);
+      toast.error(err?.message || "Không thể upload ảnh hợp đồng");
+    } finally {
+      setIsUploadingContract(false);
+    }
+  };
+
+  const clearContractBeforeImage = () => {
+    if (contractBeforeImagePreview) {
+      URL.revokeObjectURL(contractBeforeImagePreview);
+    }
+    setContractBeforeImagePreview("");
+    setContractBeforeImage(null);
+  };
+
+
+  const handleContractAfterImageChange = (file?: File | null) => {
+    if (!file) return;
+    
+    // Tạo preview ngay lập tức
+    const objectUrl = URL.createObjectURL(file);
+    if (contractAfterImagePreview) {
+      URL.revokeObjectURL(contractAfterImagePreview);
+    }
+    
+    // Set state để preview hiển thị ngay
+    setContractAfterImagePreview(objectUrl);
+    setContractAfterImage(file);
+  };
+
+  const handleUploadContractAfterImage = async () => {
+    if (!selectedBilling) {
+      toast.error("Chọn hóa đơn trước");
+      return;
+    }
+    if (!contractAfterImage) {
+      toast.error("Chọn ảnh hợp đồng sau khi ký");
+      return;
+    }
+    
+    try {
+      setIsUploadingContractAfter(true);
+      const updatedBilling = await uploadContractAfterImage(selectedBilling.id, contractAfterImage);
+      
+      // Cập nhật preview từ URL backend nếu có
+      if (updatedBilling.contractAfterImage && contractAfterImagePreview?.startsWith('blob:')) {
+        const imageUrl = updatedBilling.contractAfterImage;
+        URL.revokeObjectURL(contractAfterImagePreview);
+        setContractAfterImagePreview(imageUrl);
+      }
+      
+      setBillingsByPhone(prev => 
+        prev.map(b => b.id === updatedBilling.id ? updatedBilling : b)
+      );
+      toast.success("Upload ảnh hợp đồng thành công!");
+    } catch (err: any) {
+      console.error("❌ Lỗi upload ảnh hợp đồng:", err);
+      toast.error(err?.message || "Không thể upload ảnh hợp đồng");
+    } finally {
+      setIsUploadingContractAfter(false);
+    }
+  };
+
+  const clearContractAfterImage = () => {
+    if (contractAfterImagePreview) {
+      URL.revokeObjectURL(contractAfterImagePreview);
+    }
+    setContractAfterImagePreview("");
+    setContractAfterImage(null);
+  };
+
+
   const handleConfirmDelivery = async () => {
     if (!selectedBilling) {
       toast.error("Chọn hóa đơn để giao xe");
       return;
     }
-    // Dùng ảnh "Trước" đã chọn từ thư viện thay cho URL
-    const frontFile = deliveryFiles["Trước"];
-    if (!frontFile) {
-      toast.error("Chọn ảnh 'Trước' trước khi giao xe");
+    if (!deliveryFile) {
+      toast.error("Chọn ảnh xe trước khi giao");
       return;
     }
-    console.log("🚗 Giao xe - File ảnh:", frontFile);
-    console.log("🚗 Billing ID:", selectedBilling.id);
+    console.log(" Giao xe - File ảnh:", deliveryFile);
+    console.log(" Billing ID:", selectedBilling.id);
     try {
-      console.log("📤 Đang check-in với ảnh...");
-      await checkInByBillingId(selectedBilling.id, frontFile);
+      console.log(" Đang check-in với ảnh...");
+      await checkInByBillingId(selectedBilling.id, deliveryFile);
       toast.success("Giao xe thành công (đã check-in)!");
       // Reset
       setPreImageUrl("");
       setDeliveryNote("");
       setSelectedBillingId("");
-      setDeliveryPhotos({ "Trước": "", "Sau": "", "Trái": "", "Phải": "" });
-      setDeliveryFiles({ "Trước": null, "Sau": null, "Trái": null, "Phải": null });
+      clearDeliveryPhoto();
+      clearContractBeforeImage();
+      clearContractAfterImage();
     } catch (err: any) {
-      console.error("❌ Lỗi giao xe:", err);
+      console.error(" Lỗi giao xe:", err);
       toast.error(err?.message || "Không thể xác nhận giao xe");
     }
   };
@@ -249,36 +342,69 @@ const StaffHandoverPage = () => {
     }
   }, [activeTab]);
 
+  // Load ảnh hợp đồng từ billing khi chọn billing mới
+  useEffect(() => {
+    if (!selectedBilling) {
+      // Reset khi không có billing được chọn
+      if (contractBeforeImagePreview && !contractBeforeImage) {
+        const preview = contractBeforeImagePreview;
+        if (!preview.startsWith('blob:')) {
+          // Chỉ clear nếu không phải blob URL (không phải ảnh mới chọn)
+          setContractBeforeImagePreview("");
+        }
+      }
+      if (contractAfterImagePreview && !contractAfterImage) {
+        const preview = contractAfterImagePreview;
+        if (!preview.startsWith('blob:')) {
+          // Chỉ clear nếu không phải blob URL (không phải ảnh mới chọn)
+          setContractAfterImagePreview("");
+        }
+      }
+      return;
+    }
+
+    // Chỉ load từ billing nếu chưa có ảnh local được chọn
+    // Không override nếu đang có blob URL (ảnh mới chọn)
+    if (!contractBeforeImage && !contractBeforeImagePreview?.startsWith('blob:')) {
+      if (selectedBilling.contractBeforeImage) {
+        setContractBeforeImagePreview(selectedBilling.contractBeforeImage);
+      }
+    }
+    
+    if (!contractAfterImage && !contractAfterImagePreview?.startsWith('blob:')) {
+      if (selectedBilling.contractAfterImage) {
+        setContractAfterImagePreview(selectedBilling.contractAfterImage);
+      }
+    }
+  }, [selectedBilling?.id]);
+
   const handleConfirmReturn = async () => {
     if (!selectedReturnBilling) {
       toast.error("Chọn hóa đơn để trả xe");
       return;
     }
-    // Dùng ảnh "Trước" đã chọn khi trả xe
-    const frontReturnFile = returnFiles["Trước"];
-    if (!frontReturnFile) {
-      toast.error("Chọn ảnh 'Trước' khi trả xe");
+    if (!returnFile) {
+      toast.error("Chọn ảnh xe khi trả");
       return;
     }
     const penalty = Number(penaltyCost || 0);
-    console.log("🔄 Trả xe - File ảnh:", frontReturnFile);
-    console.log("🔄 Billing ID:", selectedReturnBilling.id);
-    console.log("🔄 Penalty:", penalty);
+    console.log(" Trả xe - File ảnh:", returnFile);
+    console.log(" Billing ID:", selectedReturnBilling.id);
+    console.log(" Penalty:", penalty);
     try {
-      console.log("📤 Đang inspect return với ảnh...");
-      await inspectReturnedVehicle(selectedReturnBilling.id, frontReturnFile, penalty, returnNote.trim());
+      console.log(" Đang inspect return với ảnh...");
+      await inspectReturnedVehicle(selectedReturnBilling.id, returnFile, penalty, returnNote.trim());
       toast.success("Trả xe thành công, đã cập nhật hoàn tất!");
       // Reset
       setFinalImageUrl("");
       setPenaltyCost("0");
       setReturnNote("");
       setReturnBillingId("");
-      setReturnPhotos({ "Trước": "", "Sau": "", "Trái": "", "Phải": "" });
-      setReturnFiles({ "Trước": null, "Sau": null, "Trái": null, "Phải": null });
+      clearReturnPhoto();
       // Refresh list
       loadInUseBillings();
     } catch (err: any) {
-      console.error("❌ Lỗi trả xe:", err);
+      console.error(" Lỗi trả xe:", err);
       toast.error(err?.message || "Không thể xác nhận trả xe");
     }
   };
@@ -291,8 +417,8 @@ const StaffHandoverPage = () => {
           <p className="text-muted-foreground">Thực hiện thủ tục bàn giao xe cho khách hàng</p>
         </div>
 
-        {/* Global phone search for both tabs */}
-        <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_auto]">
+  {/* Tìm kiếm theo SĐT áp dụng cho cả hai tab */}
+  <div className="mb-6 grid gap-4 lg:grid-cols-[1fr_auto]">
           <div className="space-y-2">
             <Label htmlFor="global-customer-phone">Số điện thoại khách (áp dụng cho cả hai tab)</Label>
             <Input
@@ -317,7 +443,7 @@ const StaffHandoverPage = () => {
 
           <TabsContent value="delivery" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Customer Info */}
+                {/* Thông tin khách hàng */}
               <Card>
                 <CardHeader>
                   <CardTitle>Thông tin khách hàng</CardTitle>
@@ -368,7 +494,7 @@ const StaffHandoverPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Vehicle Info */}
+              {/* Thông tin xe */}
               <Card>
                 <CardHeader>
                   <CardTitle>Thông tin xe</CardTitle>
@@ -377,6 +503,10 @@ const StaffHandoverPage = () => {
                   <div className="space-y-2">
                     <Label>Xe</Label>
                     <Input readOnly value={selectedBilling ? `${selectedBilling.vehicle?.code || ""} - ${selectedBilling.vehicle?.model?.name || selectedBilling.vehicleModel || ""}` : ""} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Biển số</Label>
+                    <Input readOnly value={selectedBilling?.vehicleLicensePlate || ""} />
                   </div>
                   <div className="space-y-2">
                     <Label>Trạm</Label>
@@ -392,57 +522,176 @@ const StaffHandoverPage = () => {
               </Card>
             </div>
 
-            {/* Checklist removed as requested */}
+            {/* Danh sách kiểm tra đã được loại bỏ theo yêu cầu */}
 
-            {/* Photos */}
+            {/* Ảnh hợp đồng */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Ảnh hợp đồng</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Contract Before Image */}
+                  <div className="flex flex-col gap-3">
+                    {contractBeforeImagePreview ? (
+                      <div 
+                        className="h-40 w-full border rounded-lg overflow-hidden bg-white cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => document.getElementById("contract-before-image-input")?.click()}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={contractBeforeImagePreview} 
+                          alt="Hợp đồng trước ký" 
+                          className="h-full w-full object-contain"
+                          onLoad={() => console.log("✅ Ảnh trước ký đã load:", contractBeforeImagePreview)}
+                          onError={(e) => console.error("❌ Lỗi load ảnh trước ký:", e, contractBeforeImagePreview)}
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="h-40 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                        onClick={() => document.getElementById("contract-before-image-input")?.click()}
+                      >
+                        <div className="flex flex-col items-center justify-center h-full gap-2">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm font-medium">Ảnh trước ký</span>
+                        </div>
+                      </Button>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUploadContractBeforeImage}
+                        disabled={!contractBeforeImage || !selectedBilling || isUploadingContract}
+                      >
+                        {isUploadingContract ? "Đang upload..." : "Upload"}
+                      </Button>
+                      {contractBeforeImagePreview && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearContractBeforeImage}
+                          disabled={isUploadingContract}
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                    <input
+                      id="contract-before-image-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleContractBeforeImageChange(e.target.files?.[0])}
+                    />
+                  </div>
+
+                  {/* Contract After Image */}
+                  <div className="flex flex-col gap-3">
+                    {contractAfterImagePreview ? (
+                      <div 
+                        className="h-40 w-full border rounded-lg overflow-hidden bg-white cursor-pointer hover:bg-accent/50 transition-colors"
+                        onClick={() => document.getElementById("contract-after-image-input")?.click()}
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                          src={contractAfterImagePreview} 
+                          alt="Hợp đồng sau ký" 
+                          className="h-full w-full object-contain"
+                          onLoad={() => console.log("✅ Ảnh sau ký đã load:", contractAfterImagePreview)}
+                          onError={(e) => console.error("❌ Lỗi load ảnh sau ký:", e, contractAfterImagePreview)}
+                        />
+                      </div>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        className="h-40 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                        onClick={() => document.getElementById("contract-after-image-input")?.click()}
+                      >
+                        <div className="flex flex-col items-center justify-center h-full gap-2">
+                          <Camera className="h-8 w-8 text-muted-foreground" />
+                          <span className="text-sm font-medium">Ảnh sau ký</span>
+                        </div>
+                      </Button>
+                    )}
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleUploadContractAfterImage}
+                        disabled={!contractAfterImage || !selectedBilling || isUploadingContractAfter}
+                      >
+                        {isUploadingContractAfter ? "Đang upload..." : "Upload"}
+                      </Button>
+                      {contractAfterImagePreview && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearContractAfterImage}
+                          disabled={isUploadingContractAfter}
+                        >
+                          Xóa
+                        </Button>
+                      )}
+                    </div>
+                    <input
+                      id="contract-after-image-input"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleContractAfterImageChange(e.target.files?.[0])}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Ảnh xe */}
             <Card>
               <CardHeader>
                 <CardTitle>Chụp ảnh xe</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  {deliveryPositions.map((position) => (
-                    <div key={position} className="flex flex-col items-stretch gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-32 flex flex-col gap-2 p-0 overflow-hidden"
-                        onClick={() => handlePickDelivery(position)}
-                      >
-                        {deliveryPhotos[position] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={deliveryPhotos[position]} alt={position} className="h-full w-full object-contain" />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full">
-                            <Camera className="h-6 w-6" />
-                            <span>{position}</span>
-                          </div>
-                        )}
-                      </Button>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!deliveryPhotos[position]}
-                          onClick={() => clearDeliveryPhoto(position)}
-                        >
-                          Xóa
-                        </Button>
+                <div className="flex flex-col gap-3 max-w-2xl">
+                  <Button
+                    variant="outline"
+                    className="h-64 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                    onClick={handlePickDelivery}
+                  >
+                    {deliveryPhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={deliveryPhoto} alt="Ảnh xe" className="h-full w-full object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full gap-3">
+                        <Camera className="h-10 w-10 text-muted-foreground" />
+                        <span className="text-base font-medium">Chọn ảnh xe</span>
                       </div>
-                      <input
-                        id={`delivery-photo-input-${position}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => onDeliveryFileChange(position, e.target.files?.[0])}
-                      />
-                    </div>
-                  ))}
+                    )}
+                  </Button>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!deliveryPhoto}
+                      onClick={clearDeliveryPhoto}
+                    >
+                      Xóa
+                    </Button>
+                  </div>
+                  <input
+                    id="delivery-photo-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => onDeliveryFileChange(e.target.files?.[0])}
+                  />
                 </div>
-                {/* Không cần URL ảnh: dùng ảnh 'Trước' đã chọn */}
               </CardContent>
             </Card>
 
-            {/* Notes */}
+            {/* Ghi chú */}
             <Card>
               <CardHeader>
                 <CardTitle>Ghi chú</CardTitle>
@@ -456,7 +705,7 @@ const StaffHandoverPage = () => {
               </CardContent>
             </Card>
 
-            {/* Actions */}
+            {/* Hành động */}
             <div className="flex gap-4 justify-end">
               <Button variant="outline">Hủy</Button>
               <Button onClick={handleConfirmDelivery}>
@@ -468,7 +717,7 @@ const StaffHandoverPage = () => {
 
           <TabsContent value="return" className="space-y-6">
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Customer Info (Return) */}
+              {/* Thông tin khách hàng (Trả xe) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Thông tin khách hàng</CardTitle>
@@ -524,7 +773,7 @@ const StaffHandoverPage = () => {
                 </CardContent>
               </Card>
 
-              {/* Vehicle Info (Return) */}
+              {/* Thông tin xe (Trả xe) */}
               <Card>
                 <CardHeader>
                   <CardTitle>Thông tin xe</CardTitle>
@@ -533,6 +782,10 @@ const StaffHandoverPage = () => {
                   <div className="space-y-2">
                     <Label>Xe</Label>
                     <Input readOnly value={selectedReturnBilling ? `${selectedReturnBilling.vehicle?.code || ""} - ${selectedReturnBilling.vehicle?.model?.name || selectedReturnBilling.vehicleModel || ""}` : ""} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Biển số</Label>
+                    <Input readOnly value={selectedReturnBilling?.vehicleLicensePlate || ""} />
                   </div>
                   <div className="space-y-2">
                     <Label>Trạm</Label>
@@ -548,55 +801,50 @@ const StaffHandoverPage = () => {
               </Card>
             </div>
 
-            {/* Return Photos */}
+            {/* Ảnh khi trả */}
             <Card>
               <CardHeader>
                 <CardTitle>Chụp ảnh xe khi trả</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                  {deliveryPositions.map((position) => (
-                    <div key={position} className="flex flex-col items-stretch gap-2">
-                      <Button
-                        variant="outline"
-                        className="h-32 flex flex-col gap-2 p-0 overflow-hidden"
-                        onClick={() => handlePickReturn(position)}
-                      >
-                        {returnPhotos[position] ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={returnPhotos[position]} alt={position} className="h-full w-full object-contain" />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-full">
-                            <Camera className="h-6 w-6" />
-                            <span>{position}</span>
-                          </div>
-                        )}
-                      </Button>
-                      <div className="flex justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!returnPhotos[position]}
-                          onClick={() => clearReturnPhoto(position)}
-                        >
-                          Xóa
-                        </Button>
+                <div className="flex flex-col gap-3 max-w-2xl">
+                  <Button
+                    variant="outline"
+                    className="h-64 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                    onClick={handlePickReturn}
+                  >
+                    {returnPhoto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={returnPhoto} alt="Ảnh xe khi trả" className="h-full w-full object-contain" />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full gap-3">
+                        <Camera className="h-10 w-10 text-muted-foreground" />
+                        <span className="text-base font-medium">Chọn ảnh xe</span>
                       </div>
-                      <input
-                        id={`return-photo-input-${position}`}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => onReturnFileChange(position, e.target.files?.[0])}
-                      />
-                    </div>
-                  ))}
+                    )}
+                  </Button>
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={!returnPhoto}
+                      onClick={clearReturnPhoto}
+                    >
+                      Xóa
+                    </Button>
+                  </div>
+                  <input
+                    id="return-photo-input"
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => onReturnFileChange(e.target.files?.[0])}
+                  />
                 </div>
-                {/* Không cần URL ảnh: dùng ảnh 'Trước' đã chọn */}
               </CardContent>
             </Card>
 
-            {/* Return Notes */}
+            {/* Ghi chú trả xe */}
             <Card>
               <CardHeader>
                 <CardTitle>Ghi chú tình trạng xe khi trả</CardTitle>

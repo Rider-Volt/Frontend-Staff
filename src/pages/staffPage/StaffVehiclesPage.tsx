@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, RefreshCw, AlertCircle, Search, Battery, MapPin, Wrench, Edit, Pin } from "lucide-react";
+import { Car, RefreshCw, AlertCircle, Search, Battery, Clock, Edit, Pin, LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getStaffVehicles, 
@@ -19,6 +19,55 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 
 const formatCurrency = (v: number) => `${v.toLocaleString()}đ/ngày`;
 
+// StatCard component for dashboard
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: LucideIcon;
+  trend?: {
+    value: number;
+    isPositive: boolean;
+  };
+  variant?: "default" | "primary" | "success" | "warning";
+}
+
+const StatCard = ({ title, value, icon: Icon, trend, variant = "default" }: StatCardProps) => {
+  const variantStyles = {
+    default: "bg-white",
+    primary: "bg-blue-50",
+    success: "bg-green-50",
+    warning: "bg-orange-50",
+  };
+
+  const iconColors = {
+    default: "text-gray-700",
+    primary: "text-blue-600",
+    success: "text-green-600",
+    warning: "text-orange-600",
+  };
+
+  return (
+    <Card className={`${variantStyles[variant]} transition-all hover:shadow-lg border-0`}>
+      <CardContent className="p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-gray-600">{title}</p>
+            <p className="text-3xl font-bold mt-2 text-gray-900">{value}</p>
+            {trend && (
+              <p className={`text-sm mt-1 ${trend.isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                {trend.isPositive ? '+' : ''}{trend.value}% so với hôm qua
+              </p>
+            )}
+          </div>
+          <div className={`rounded-full p-3 ${variant === "default" ? "bg-gray-100" : ""}`}>
+            <Icon className={`h-6 w-6 ${iconColors[variant]}`} />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const StaffVehiclesPage = () => {
   const { toast } = useToast();
   const [vehicles, setVehicles] = useState<StaffVehicle[]>([]);
@@ -28,6 +77,7 @@ const StaffVehiclesPage = () => {
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<StaffVehicle | null>(null);
+  
 
   const fetchVehicles = async () => {
     setLoading(true);
@@ -55,6 +105,8 @@ const StaffVehiclesPage = () => {
     fetchVehicles();
   }, [statusFilter]);
 
+  
+
   const filteredVehicles = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return vehicles;
@@ -66,6 +118,33 @@ const StaffVehiclesPage = () => {
       v.vehicleType?.toLowerCase().includes(q)
     );
   }, [vehicles, search]);
+
+ // Tính toán số liệu thống kê cho thẻ bảng điều khiển
+  const { availableCount, rentedCount, maintenanceCount, reservedCount, lockedCount, averagePin } = useMemo(() => {
+    if (!vehicles.length) return { availableCount: 0, rentedCount: 0, maintenanceCount: 0, reservedCount: 0, lockedCount: 0, averagePin: 0 };
+    const counts = vehicles.reduce(
+      (acc, v) => {
+        const s = (v.status || "").toUpperCase();
+        if (s === "AVAILABLE") acc.available += 1;
+        else if (s === "RENTED") acc.rented += 1;
+        else if (s === "MAINTENANCE") acc.maintenance += 1;
+        else if (s === "RESERVED") acc.reserved += 1;
+        else if (s === "LOCKED") acc.locked += 1;
+        acc.pinSum += Number.isFinite(v.currentPin) ? v.currentPin : 0;
+        return acc;
+      },
+      { available: 0, rented: 0, maintenance: 0, reserved: 0, locked: 0, pinSum: 0 }
+    );
+    const avg = Math.round(counts.pinSum / Math.max(vehicles.length, 1));
+    return { 
+      availableCount: counts.available, 
+      rentedCount: counts.rented, 
+      maintenanceCount: counts.maintenance,
+      reservedCount: counts.reserved,
+      lockedCount: counts.locked,
+      averagePin: avg 
+    };
+  }, [vehicles]);
 
   const handleStatusUpdate = async (vehicleId: number, newStatus: string) => {
     setUpdatingIds(prev => new Set(prev).add(vehicleId));
@@ -96,6 +175,7 @@ const StaffVehiclesPage = () => {
     setEditingVehicle(vehicle);
     setIsEditDialogOpen(true);
   };
+  
 
   if (loading && vehicles.length === 0) {
     return (
@@ -112,7 +192,49 @@ const StaffVehiclesPage = () => {
 
   return (
     <StaffLayout>
-      <div className="p-6 md:p-8 space-y-6">
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-white shadow-sm p-6 mb-8">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-800 flex items-center">
+                <Car className="h-8 w-8 text-blue-500 mr-3" />
+                Quản lý xe
+              </h1>
+              <p className="text-gray-600 mt-1">Xem danh sách xe</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-6 pb-10 space-y-6">
+          {/* Dashboard Cards */}
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <StatCard 
+            title="Xe sẵn sàng" 
+            value={availableCount} 
+            icon={Car} 
+            variant="success" 
+            trend={{ value: 0, isPositive: true }} 
+          />
+          <StatCard 
+            title="Xe đang thuê" 
+            value={rentedCount} 
+            icon={Clock} 
+            variant="primary" 
+          />
+          <StatCard 
+            title="Pin trung bình" 
+            value={`${averagePin}%`} 
+            icon={Battery} 
+            variant="warning" 
+          />
+          <StatCard 
+            title="XE bảo trì" 
+            value={maintenanceCount} 
+            icon={AlertCircle} 
+            variant="default" 
+          />
+        </div>
+
         {/* Search Bar */}
         <div className="flex items-center justify-between gap-4">
           <div className="relative flex-1 max-w-md">
@@ -141,6 +263,8 @@ const StaffVehiclesPage = () => {
                     <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
                     <SelectItem value="RENTED">Đang thuê</SelectItem>
                     <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+                    <SelectItem value="RESERVED">Đã đặt trước</SelectItem>
+                    <SelectItem value="LOCKED">Đã khóa</SelectItem>
                   </SelectContent>
                 </Select>
                 <Button 
@@ -176,7 +300,7 @@ const StaffVehiclesPage = () => {
                       <TableHead>Trạm</TableHead>
                       <TableHead>Giá/ngày</TableHead>
                       <TableHead>Trạng thái</TableHead>
-                      <TableHead className="text-right">Hành động</TableHead>
+                      <TableHead className="text-right">Cập nhập</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -275,6 +399,8 @@ const StaffVehiclesPage = () => {
                       <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
                       <SelectItem value="RENTED">Đang thuê</SelectItem>
                       <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
+                      <SelectItem value="RESERVED">Đã đặt trước</SelectItem>
+                      <SelectItem value="LOCKED">Đã khóa</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -295,6 +421,7 @@ const StaffVehiclesPage = () => {
             )}
           </DialogContent>
         </Dialog>
+        </div>
       </div>
     </StaffLayout>
   );

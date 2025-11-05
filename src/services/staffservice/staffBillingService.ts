@@ -1,27 +1,32 @@
 const API_BASE = "https://backend.ridervolt.app/api";
 
-export type BillingStatus = "PENDING" | "PAYED" | "CANCELLED" | "RENTING" | "APPROVED" | "COMPLETED";
+export type BillingStatus = "PENDING" | "PAYED" | "CANCELLED" | "RENTING" | "APPROVED" | "COMPLETED" | "WAITING";
 
 export interface BillingResponse {
   id: number;
+  renterId: number;
+  renterName: string;
+  renterEmail: string;
+  vehicleId: number;
+  vehicleModel: string;
+  vehicleLicensePlate: string;
+  modelId: number;
+  stationId: number;
+  stationName: string;
   rentedDay: number;
-  bookingTime?: string; 
-  startTime?: string; 
-  endTime?: string; 
-  plannedStartDate?: string; 
-  plannedEndDate?: string; 
+  bookingTime: string;
+  plannedStartDate: string;
+  plannedEndDate: string;
   actualPickupAt?: string;
-  actualReturnAt?: string; 
+  actualReturnAt?: string;
   preImage?: string | null;
   finalImage?: string | null;
+  contractBeforeImage?: string | null;
+  contractAfterImage?: string | null;
   status: BillingStatus;
-  vehicleId?: number;
-  vehicleModel?: string;
-  stationId?: number;
-  stationName?: string;
-  renterId?: number;
-  renterName?: string;
-  renterEmail?: string;
+  penaltyCost?: number;
+  note?: string;
+  // Optional nested objects for backward compatibility
   renter?: {
     id?: number;
     name?: string;
@@ -34,6 +39,10 @@ export interface BillingResponse {
     station?: { id?: number; name?: string } | null;
     model?: { id?: number; name?: string; photoUrl?: string; type?: string; pricePerDay?: number | string } | null;
   } | null;
+  // Legacy fields for backward compatibility (may be computed from plannedStartDate/plannedEndDate)
+  startTime?: string;
+  endTime?: string;
+  renterPhone?: string;
 }
 
 function authHeaders(): HeadersInit {
@@ -240,6 +249,93 @@ export async function updateFinalImageFile(id: number, file: File): Promise<Bill
   }
   return (await resp.json()) as BillingResponse;
 }
+
+// Upload ảnh hợp đồng trước khi ký (multipart/form-data)
+export async function uploadContractBeforeImage(id: number, file: File): Promise<BillingResponse> {
+  const form = new FormData();
+  form.append("contractBeforeImage", file);
+  const resp = await fetch(`${API_BASE}/staff/billings/${id}/contract-before-image`, {
+    method: "PATCH",
+    headers: { 
+      ...authHeaders(),
+      // KHÔNG đặt Content-Type cho FormData để trình duyệt tự set boundary
+    },
+    body: form,
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền upload ảnh hợp đồng.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy đơn hàng.");
+    }
+    // Thử parse JSON error message
+    let errorMessage = `Lỗi upload ảnh hợp đồng (${resp.status})`;
+    try {
+      const contentType = resp.headers.get("content-type");
+      const responseText = await resp.text();
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+      } else {
+        errorMessage = responseText || errorMessage;
+      }
+    } catch (parseError) {
+      errorMessage = resp.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+  return (await resp.json()) as BillingResponse;
+}
+
+// Upload ảnh hợp đồng sau khi ký (multipart/form-data)
+export async function uploadContractAfterImage(id: number, file: File): Promise<BillingResponse> {
+  const form = new FormData();
+  form.append("contractAfterImage", file);
+  const resp = await fetch(`${API_BASE}/staff/billings/${id}/contract-after-image`, {
+    method: "PATCH",
+    headers: { 
+      ...authHeaders(),
+      // KHÔNG đặt Content-Type cho FormData để trình duyệt tự set boundary
+    },
+    body: form,
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền upload ảnh hợp đồng.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy đơn hàng.");
+    }
+    // Thử parse JSON error message
+    let errorMessage = `Lỗi upload ảnh hợp đồng (${resp.status})`;
+    try {
+      const contentType = resp.headers.get("content-type");
+      const responseText = await resp.text();
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+      } else {
+        errorMessage = responseText || errorMessage;
+      }
+    } catch (parseError) {
+      errorMessage = resp.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
+  }
+  return (await resp.json()) as BillingResponse;
+}
+
 // Lấy thống kê đơn hàng tại trạm
 export async function getBillingStatistics() {
   const resp = await fetch(`${API_BASE}/staff/billings/statistics`, {
@@ -368,8 +464,26 @@ export async function approvePenaltyPayment(id: number): Promise<BillingResponse
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền phê duyệt thanh toán phạt.");
     }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to approve penalty payment (${resp.status})`);
+    // Thử parse JSON error message
+    let errorMessage = `Lỗi phê duyệt thanh toán phạt (${resp.status})`;
+    try {
+      const contentType = resp.headers.get("content-type");
+      const responseText = await resp.text();
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+      } else {
+        errorMessage = responseText || errorMessage;
+      }
+    } catch (parseError) {
+      errorMessage = resp.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
   return (await resp.json()) as BillingResponse;
 }
@@ -384,8 +498,26 @@ export async function approveCustomerPayment(id: number): Promise<BillingRespons
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền phê duyệt thanh toán khách hàng.");
     }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to approve customer payment (${resp.status})`);
+    // Thử parse JSON error message
+    let errorMessage = `Lỗi phê duyệt thanh toán (${resp.status})`;
+    try {
+      const contentType = resp.headers.get("content-type");
+      const responseText = await resp.text();
+      
+      if (contentType && contentType.includes("application/json")) {
+        try {
+          const errorJson = JSON.parse(responseText);
+          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
+        } catch {
+          errorMessage = responseText || errorMessage;
+        }
+      } else {
+        errorMessage = responseText || errorMessage;
+      }
+    } catch (parseError) {
+      errorMessage = resp.statusText || errorMessage;
+    }
+    throw new Error(errorMessage);
   }
   return (await resp.json()) as BillingResponse;
 }
