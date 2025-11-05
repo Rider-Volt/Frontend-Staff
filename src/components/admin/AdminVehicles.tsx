@@ -248,16 +248,8 @@ const AdminVehicles = () => {
       alert('Vui lòng nhập biển số xe!');
       return;
     }
-    if (!editingVehicle.modelId || editingVehicle.modelId <= 0) {
-      alert('Vui lòng nhập ID model hợp lệ!');
-      return;
-    }
     if (!editingVehicle.stationId || editingVehicle.stationId <= 0) {
       alert('Vui lòng nhập ID trạm hợp lệ!');
-      return;
-    }
-    if (editingVehicle.pricePerDay < 0) {
-      alert('Giá thuê/ngày không được âm!');
       return;
     }
     if (editingVehicle.currentPin !== undefined && (editingVehicle.currentPin < 0 || editingVehicle.currentPin > 100)) {
@@ -268,10 +260,7 @@ const AdminVehicles = () => {
     try {
       const updateData: UpdateVehicleRequest = {
         code: editingVehicle.licensePlate,
-        modelId: editingVehicle.modelId,
         stationId: editingVehicle.stationId,
-        pricePerDay: editingVehicle.pricePerDay,
-        photoUrl: editingVehicle.imageUrl || '',
         currentPin: editingVehicle.currentPin
       };
       
@@ -587,29 +576,7 @@ const AdminVehicles = () => {
                    />
                    <p className="text-xs text-gray-500 mt-1">Mã xe (biển số)</p>
                  </div>
-                <div>
-                  <label className="text-sm font-medium">Model <span className="text-red-500">*</span></label>
-                  <Select 
-                    value={editingVehicle.modelId && editingVehicle.modelId > 0 ? editingVehicle.modelId.toString() : ''}
-                    onValueChange={(value) => setEditingVehicle({...editingVehicle, modelId: parseInt(value) || 0})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Chọn model xe" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models.length === 0 ? (
-                        <SelectItem value="" disabled>Đang tải models...</SelectItem>
-                      ) : (
-                        models.map((model) => (
-                          <SelectItem key={model.id} value={model.id.toString()}>
-                            {model.name} ({model.type})
-                          </SelectItem>
-                        ))
-                      )}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-gray-500 mt-1">Chọn model xe từ danh sách</p>
-                </div>
+                {/* Model đã bỏ khỏi form chỉnh sửa theo yêu cầu BE */}
                 <div>
                   <label className="text-sm font-medium">Trạm <span className="text-red-500">*</span></label>
                   <Select 
@@ -633,24 +600,7 @@ const AdminVehicles = () => {
                   </Select>
                   <p className="text-xs text-gray-500 mt-1">Chọn trạm từ danh sách</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Giá/ngày (VNĐ)</label>
-                  <Input 
-                    type="number"
-                    placeholder="Nhập giá thuê/ngày" 
-                    value={editingVehicle.pricePerDay || ''}
-                    onChange={(e) => setEditingVehicle({...editingVehicle, pricePerDay: parseInt(e.target.value) || 0})}
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">URL Ảnh</label>
-                  <Input 
-                    placeholder="Nhập URL ảnh xe" 
-                    value={editingVehicle.imageUrl || ''}
-                    onChange={(e) => setEditingVehicle({...editingVehicle, imageUrl: e.target.value})}
-                  />
-                </div>
+                {/* Giá/ngày và URL ảnh đã bỏ khỏi form chỉnh sửa theo yêu cầu BE */}
                 <div>
                   <label className="text-sm font-medium">Pin Level (%)</label>
                   <Input 

@@ -159,30 +159,16 @@ export async function updateVehicle(vehicleId: number, data: UpdateVehicleReques
   console.log('Updating vehicle - ID:', vehicleId);
   console.log('Update data:', JSON.stringify(data, null, 2));
   
-  // Tách stationId và status ra khỏi body và thêm vào query parameter (nếu có)
-  const { stationId, status, ...bodyData } = data;
-  let url = `${API_BASE}/admin/vehicles/${vehicleId}`;
-  
-  // Tạo query parameters
-  const queryParams = [];
-  if (stationId) {
-    queryParams.push(`stationId=${stationId}`);
-  }
-  if (status) {
-    queryParams.push(`status=${status}`);
-  }
-  
-  if (queryParams.length > 0) {
-    url += '?' + queryParams.join('&');
-  }
+  // Theo API docs, stationId phải nằm trong request body, không phải query parameter
+  const url = `${API_BASE}/admin/vehicles/${vehicleId}`;
   
   console.log('Update request URL:', url);
-  console.log('Update request body:', JSON.stringify(bodyData, null, 2));
+  console.log('Update request body:', JSON.stringify(data, null, 2));
   
   const resp = await fetch(url, {
     method: "PUT",
     headers: authHeaders(),
-    body: JSON.stringify(bodyData),
+    body: JSON.stringify(data),
   });
   
   console.log('Update response status:', resp.status);

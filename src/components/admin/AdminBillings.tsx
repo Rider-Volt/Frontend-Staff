@@ -20,15 +20,42 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from '@/components/ui/badge';
 import { AlertCircle, Eye, Loader2, MoreHorizontal, Search, Trash2 } from 'lucide-react';
 import { BillingDetail, BillingSummary, deleteBilling, getAllBillings, getBillingById } from '@/services/adminservice/adminBillingService';
-import { getAllVehicles, Vehicle } from '@/services/adminservice/adminVehicleService';
 
-const formatCurrency = (v?: number | string | null) => {
-  if (v === null || v === undefined || v === ('' as any)) return '—';
-  const num = typeof v === 'string' ? Number(v) : v;
-  if (Number.isNaN(num as number)) return '—';
-  return (num as number).toLocaleString('vi-VN') + ' VNĐ';
+const formatCurrency = (v: number) => {
+  return v.toLocaleString('vi-VN') + ' VNĐ';
 };
-const safe = (v?: string | null) => v || '—';
+
+const formatDate = (dateStr: string | null): string => {
+  if (!dateStr) return '—';
+  return new Date(dateStr).toLocaleString('vi-VN');
+};
+
+const formatDateOnly = (dateStr: string): string => {
+  return new Date(dateStr).toLocaleDateString('vi-VN');
+};
+
+const safe = (v: string | null | undefined): string => v || '—';
+
+const translateStatus = (status: string | null | undefined): string => {
+  if (!status) return '—';
+  const statusUpper = status.toUpperCase();
+  const statusMap: Record<string, string> = {
+    'COMPLETED': 'hoàn thành',
+    'DONE': 'hoàn thành',
+    'FINISHED': 'hoàn thành',
+    'PAYED': 'Đã thanh toán',
+    'PAID': 'Đã thanh toán',
+    'APPROVED': 'Đã thanh toán',
+    'CANCELLED': 'Đã hủy',
+    'CANCELED': 'Đã hủy',
+    'PENDING': 'Chờ xử lý',
+    'WAITING': 'Chờ xử lý',
+    'RENTING': 'Đang thuê',
+    'ONGOING': 'Đang thuê',
+    'CONFIRMED': 'Đã xác nhận',
+  };
+  return statusMap[statusUpper] || status;
+};
 
 const AdminBillings: React.FC = () => {
   const [billings, setBillings] = useState<BillingSummary[]>([]);
@@ -37,7 +64,6 @@ const AdminBillings: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewBilling, setViewBilling] = useState<BillingDetail | null>(null);
-  const [vehicleIdToPlate, setVehicleIdToPlate] = useState<Record<number, string>>({});
 
   useEffect(() => {
     const load = async () => {
@@ -45,21 +71,9 @@ const AdminBillings: React.FC = () => {
         setLoading(true);
         setError(null);
         const data = await getAllBillings();
-        console.log('Admin billings sample:', data?.[0]);
         setBillings(data);
-        // fetch vehicles to map license plates if backend omits plate in billing
-        try {
-          const vehicles: Vehicle[] = await getAllVehicles();
-          const map: Record<number, string> = {};
-          for (const v of vehicles) {
-            map[v.vehicleId] = v.licensePlate;
-          }
-          setVehicleIdToPlate(map);
-        } catch (e) {
-          console.warn('Load vehicles for plate mapping failed:', e);
-        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Lỗi khi tải danh sách đơn thuêthuê');
+        setError(err instanceof Error ? err.message : 'Lỗi khi tải danh sách đơn thuê');
       } finally {
         setLoading(false);
       }
@@ -71,13 +85,14 @@ const AdminBillings: React.FC = () => {
     const q = searchTerm.trim().toLowerCase();
     if (!q) return billings;
     return billings.filter(b => {
-      const plate = ((b as any).vehicleLicensePlate || (b as any).vehicleCode || (b as any).vehicle?.code || '').toLowerCase();
       return (
         b.id.toString().includes(q) ||
-        (b.renterName || '').toLowerCase().includes(q) ||
-        (b.vehicleModel || '').toLowerCase().includes(q) ||
-        plate.includes(q) ||
-        (b.status || '').toLowerCase().includes(q)
+        b.renterName.toLowerCase().includes(q) ||
+        b.renterEmail.toLowerCase().includes(q) ||
+        b.renterPhone.toLowerCase().includes(q) ||
+        b.vehicleModel.toLowerCase().includes(q) ||
+        b.vehicleLicensePlate.toLowerCase().includes(q) ||
+        b.status.toLowerCase().includes(q)
       );
     });
   }, [billings, searchTerm]);
@@ -156,20 +171,20 @@ const AdminBillings: React.FC = () => {
             <TableBody>
               {filtered.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-gray-500">Không có đơn thuê</TableCell>
+                  <TableCell colSpan={8} className="text-center py-8 text-gray-500">Không có đơn thuê</TableCell>
                 </TableRow>
               ) : (
                 filtered.map(b => (
                   <TableRow key={b.id}>
                     <TableCell>#{b.id}</TableCell>
-                    <TableCell>{safe(b.renterName)}</TableCell>
-                    <TableCell>{safe(b.vehicleModel)}</TableCell>
-                    <TableCell>{safe((b as any).vehicleLicensePlate || (b as any).vehicleCode || (b as any).vehicle?.code || vehicleIdToPlate[(b as any).vehicleId])}</TableCell>
+                    <TableCell>{b.renterName}</TableCell>
+                    <TableCell>{b.vehicleModel}</TableCell>
+                    <TableCell>{b.vehicleLicensePlate}</TableCell>
                     <TableCell>
-                      <Badge className="bg-gray-100 text-gray-800">{b.status || '—'}</Badge>
+                      <Badge className="bg-gray-100 text-gray-800">{translateStatus(b.status)}</Badge>
                     </TableCell>
                     <TableCell className="text-green-600 font-semibold">{formatCurrency(b.totalCost)}</TableCell>
-                    <TableCell>{b.bookingTime ? new Date(b.bookingTime).toLocaleString('vi-VN') : '—'}</TableCell>
+                    <TableCell>{formatDate(b.bookingTime)}</TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -198,62 +213,125 @@ const AdminBillings: React.FC = () => {
       </Card>
 
       <Dialog open={viewOpen} onOpenChange={setViewOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Chi Tiết Đơn Thuê</DialogTitle>
           </DialogHeader>
           {viewBilling && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="text-sm text-gray-500">Mã đơn thuêthuê</div>
+                  <div className="text-sm text-gray-500">Mã đơn thuê</div>
                   <div className="font-semibold">#{viewBilling.id}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-gray-500">Khách hàng</div>
-                  <div className="font-semibold">{safe(viewBilling.renterName)}</div>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">Model / Biển số</div>
-                  <div className="font-semibold">{safe(viewBilling.vehicleModel)} / {safe(viewBilling.vehicleLicensePlate)}</div>
-                </div>
-                <div>
                   <div className="text-sm text-gray-500">Trạng thái</div>
-                  <div className="font-semibold">{safe(viewBilling.status)}</div>
+                  <div className="font-semibold">{translateStatus(viewBilling.status)}</div>
                 </div>
               </div>
-              <div>
-                <div className="text-sm text-gray-500">Tổng tiền</div>
-                <div className="font-semibold text-green-600">{formatCurrency(viewBilling.totalCost)}</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">Nhận xe thực tế</div>
-                  <div className="font-semibold">{viewBilling.actualPickupAt ? new Date(viewBilling.actualPickupAt).toLocaleString('vi-VN') : '—'}</div>
+
+              <div className="border-t pt-4">
+                <div className="text-sm font-semibold mb-2">Thông tin khách hàng</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Tên khách hàng</div>
+                    <div className="font-semibold">{viewBilling.renterName}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Email</div>
+                    <div className="font-semibold">{viewBilling.renterEmail}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Số điện thoại</div>
+                    <div className="font-semibold">{viewBilling.renterPhone}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Trả xe thực tế</div>
-                  <div className="font-semibold">{viewBilling.actualReturnAt ? new Date(viewBilling.actualReturnAt).toLocaleString('vi-VN') : '—'}</div>
-                </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-sm text-gray-500">Ảnh trước</div>
-                  {viewBilling.preImage ? (
-                    <img src={viewBilling.preImage} alt="pre" className="h-32 w-48 object-cover rounded border" />
-                  ) : (
-                    <div className="text-sm">—</div>
+
+              <div className="border-t pt-4">
+                <div className="text-sm font-semibold mb-2">Thông tin xe</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Model</div>
+                    <div className="font-semibold">{viewBilling.vehicleModel}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Biển số</div>
+                    <div className="font-semibold">{viewBilling.vehicleLicensePlate}</div>
+                  </div>
+                  {viewBilling.vehiclePhotoUrl && (
+                    <div className="col-span-2">
+                      <div className="text-sm text-gray-500 mb-2">Ảnh xe</div>
+                      <img src={viewBilling.vehiclePhotoUrl} alt="vehicle" className="h-32 w-48 object-cover rounded border" />
+                    </div>
                   )}
                 </div>
-                <div>
-                  <div className="text-sm text-gray-500">Ảnh sau</div>
-                  {viewBilling.finalImage ? (
-                    <img src={viewBilling.finalImage} alt="final" className="h-32 w-48 object-cover rounded border" />
-                  ) : (
-                    <div className="text-sm">—</div>
-                  )}
+              </div>
+
+              <div className="border-t pt-4">
+                <div className="text-sm font-semibold mb-2">Thông tin thuê</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500">Giá mỗi ngày</div>
+                    <div className="font-semibold">{formatCurrency(viewBilling.pricePerDay)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Số ngày thuê</div>
+                    <div className="font-semibold">{viewBilling.rentedDay} ngày</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Tổng tiền</div>
+                    <div className="font-semibold text-green-600">{formatCurrency(viewBilling.totalCost)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Đặt lúc</div>
+                    <div className="font-semibold">{formatDate(viewBilling.bookingTime)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Ngày bắt đầu dự kiến</div>
+                    <div className="font-semibold">{formatDateOnly(viewBilling.plannedStartDate)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Ngày kết thúc dự kiến</div>
+                    <div className="font-semibold">{formatDateOnly(viewBilling.plannedEndDate)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Nhận xe thực tế</div>
+                    <div className="font-semibold">{formatDate(viewBilling.actualPickupAt)}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500">Trả xe thực tế</div>
+                    <div className="font-semibold">{formatDate(viewBilling.actualReturnAt)}</div>
+                  </div>
+                </div>
+              </div>
+
+              {viewBilling.note && (
+                <div className="border-t pt-4">
+                  <div className="text-sm text-gray-500">Ghi chú</div>
+                  <div className="font-semibold">{viewBilling.note}</div>
+                </div>
+              )}
+
+              <div className="border-t pt-4">
+                <div className="text-sm font-semibold mb-2">Ảnh</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">Ảnh trước khi thuê</div>
+                    {viewBilling.preImage ? (
+                      <img src={viewBilling.preImage} alt="pre" className="h-32 w-full object-cover rounded border" />
+                    ) : (
+                      <div className="text-sm text-gray-400">—</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm text-gray-500 mb-2">Ảnh sau khi trả</div>
+                    {viewBilling.finalImage ? (
+                      <img src={viewBilling.finalImage} alt="final" className="h-32 w-full object-cover rounded border" />
+                    ) : (
+                      <div className="text-sm text-gray-400">—</div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -265,5 +343,3 @@ const AdminBillings: React.FC = () => {
 };
 
 export default AdminBillings;
-
-

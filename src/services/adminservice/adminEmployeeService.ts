@@ -32,7 +32,7 @@ export interface Staff {
   status: string;
   phoneVerified: boolean;
   riskScore: number;
-  stationName?: string; // Tên trạm gán cho staff
+  stationName?: string; 
 }
 
 function authHeaders(): HeadersInit {
@@ -49,39 +49,62 @@ function authHeaders(): HeadersInit {
 // Lấy danh sách nhân viên từ stations
 export async function getAllStaff(): Promise<Staff[]> {
   try {
-    const resp = await fetch(`${API_BASE}/admin/stations/staff`, {
-      method: "GET",
-      headers: authHeaders(),
-    });
-    
-    if (!resp.ok) {
-      if (resp.status === 401 || resp.status === 403) {
-        throw new Error("Bạn không có quyền quản lý nhân viên.");
-      }
-      const text = await resp.text().catch(() => resp.statusText);
-      console.error('Error loading staff:', text);
-      throw new Error(text || `Failed to load staff (${resp.status})`);
-    }
-    
-    const stationStaffList = (await resp.json()) as StationStaff[];
-    
-    // Lọc ra danh sách staff từ các station và gán tên trạm
+    const headers = authHeaders();
     const uniqueStaffMap = new Map<number, Staff>();
-    
-    stationStaffList.forEach(station => {
-      if (station.staff && station.staff.id && station.staff.role === 'STAFF') {
-        // Chỉ lấy nhân viên có role STAFF và gán tên trạm
-        const staffWithStation = {
-          ...station.staff,
-          stationName: station.name
-        };
-        uniqueStaffMap.set(station.staff.id, staffWithStation);
+
+   
+    const candidateEndpoints = [
+      `${API_BASE}/admin/accounts/staff`,           
+      `${API_BASE}/admin/accounts?role=STAFF`,      
+    ];
+
+    for (const url of candidateEndpoints) {
+      try {
+        const respAccounts = await fetch(url, { method: 'GET', headers });
+        if (respAccounts.ok) {
+          const accounts = (await respAccounts.json()) as Staff[];
+          accounts
+            .filter(acc => acc && acc.id && acc.role === 'STAFF')
+            .forEach(acc => {
+              // Không có tên trạm thì để trống hoặc giữ nguyên nếu có
+              uniqueStaffMap.set(acc.id, { ...acc });
+            });
+          break; // đã lấy được thì dừng thử các endpoint còn lại
+        }
+      } catch (e) {
+        // Bỏ qua và thử endpoint tiếp theo
       }
-    });
-    
+    }
+
+    // 2) Fallback: Lấy nhân viên từ danh sách trạm (chỉ gồm nhân viên đã gán trạm)
+    try {
+      const respStations = await fetch(`${API_BASE}/admin/stations/staff`, {
+        method: 'GET',
+        headers,
+      });
+      if (respStations.ok) {
+        const stationStaffList = (await respStations.json()) as StationStaff[];
+        stationStaffList.forEach(station => {
+          if (station.staff && station.staff.id && station.staff.role === 'STAFF') {
+            const staffWithStation = {
+              ...station.staff,
+              stationName: station.name,
+            };
+            uniqueStaffMap.set(station.staff.id, staffWithStation);
+          }
+        });
+      } else if (respStations.status === 401 || respStations.status === 403) {
+        throw new Error('Bạn không có quyền quản lý nhân viên.');
+      }
+    } catch (e) {
+      // Nếu cả fallback cũng lỗi hoàn toàn và chưa có dữ liệu nào, ném lỗi
+      if (uniqueStaffMap.size === 0) {
+        throw e instanceof Error ? e : new Error('Failed to load staff');
+      }
+    }
+
     const staffList = Array.from(uniqueStaffMap.values());
-    console.log('Staff loaded from stations:', staffList);
-    
+    console.log('Staff loaded (merged):', staffList);
     return staffList;
   } catch (error) {
     console.error('Error in getAllStaff:', error);

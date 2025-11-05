@@ -30,17 +30,17 @@ const menuItems = [
   { title: "Đơn thuê", url: "/admin/billings", icon: ReceiptText },
   { title: "Điểm thuê", url: "/admin/stations", icon: MapPin },
   { title: "Nhân viên", url: "/admin/employees", icon: UserCog },
-  { title: "Báo cáo & Phân tích", url: "/admin/reports-analytics", icon: BarChart3 },
-  { title: "Dự báo AI", url: "/admin/ai-forecast", icon: Brain },
+  // { title: "Báo cáo & Phân tích", url: "/admin/reports-analytics", icon: BarChart3 },
+  // { title: "Dự báo AI", url: "/admin/ai-forecast", icon: Brain },
 ];
 
 const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Lấy thông tin user từ localStorage
+  // Lấy thông tin người dùng từ localStorage
   const user = accountService.getCurrentUser();
-  const displayName = user?.name || user?.userName || 'Guest';
+  const displayName = user?.name || user?.userName || 'Khách';
   const displayRole = user?.userName || 'admin';
   
   // Hàm xử lý đăng xuất
@@ -76,7 +76,7 @@ const Sidebar = () => {
         })}
       </nav>
       
-      {/* User info and logout */}
+      {/* Thông tin người dùng và đăng xuất */}
       <div className="border-t border-sidebar-border p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -106,12 +106,12 @@ const Sidebar = () => {
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Desktop Sidebar */}
+      {/* Thanh bên màn hình Desktop */}
       <aside className="hidden w-80 border-r border-sidebar-border md:block">
         <Sidebar />
       </aside>
 
-      {/* Mobile Sidebar */}
+      {/* Thanh bên màn hình Di động */}
       <Sheet>
         <SheetTrigger asChild>
           <Button
@@ -127,7 +127,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         </SheetContent>
       </Sheet>
 
-      {/* Main Content */}
+      {/* Nội dung chính */}
       <main className="flex-1 overflow-y-auto bg-background">
         {children}
       </main>

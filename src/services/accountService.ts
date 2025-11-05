@@ -241,9 +241,9 @@ const accountService = {
     };
   },
 
-  // Refresh token (placeholder - cần implement khi có API)
+  // Làm mới token (chỗ giữ chỗ) - cần triển khai logic làm mới token khi có API
   refreshToken: async (): Promise<boolean> => {
-    // TODO: Implement refresh token logic
+    // TODO: Triển khai logic làm mới token khi có API
     return false;
   }
 };

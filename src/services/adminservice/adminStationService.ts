@@ -100,13 +100,13 @@ export async function createStation(data: CreateStationRequest): Promise<Station
       throw new Error("Bạn không có quyền tạo trạm mới.");
     }
     
-    // Try to get detailed error from response
-    let errorMessage = 'Validation error';
+  // Thử lấy thông báo lỗi chi tiết từ phản hồi
+  let errorMessage = 'Validation error';
     try {
       const errorData = await resp.json();
       console.error('Error response:', errorData);
       
-      // Check if there are validation errors
+      // Kiểm tra xem có lỗi xác thực (validation) hay lỗi chi tiết nào không
       if (errorData.details || errorData.errors) {
         const details = errorData.details || errorData.errors;
         if (Array.isArray(details)) {
@@ -149,13 +149,13 @@ export async function updateStation(stationId: number, data: UpdateStationReques
       throw new Error("Không tìm thấy trạm để cập nhật.");
     }
     
-    // Try to get detailed error from response
-    let errorMessage = 'Validation error';
+  // Thử lấy thông báo lỗi chi tiết từ phản hồi
+  let errorMessage = 'Validation error';
     try {
       const errorData = await resp.json();
       console.error('Error response:', errorData);
       
-      // Check if there are validation errors
+      // Kiểm tra xem có lỗi xác thực (validation) hay lỗi chi tiết nào không
       if (errorData.details || errorData.errors) {
         const details = errorData.details || errorData.errors;
         if (Array.isArray(details)) {

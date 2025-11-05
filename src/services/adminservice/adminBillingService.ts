@@ -13,14 +13,14 @@ export interface BillingSummary {
   pricePerDay: number;
   rentedDay: number;
   totalCost: number;
-  bookingTime: string; // ISO datetime
-  plannedStartDate: string; // YYYY-MM-DD
-  plannedEndDate: string; // YYYY-MM-DD
+  bookingTime: string;
+  plannedStartDate: string;
+  plannedEndDate: string;
   actualPickupAt: string | null;
   actualReturnAt: string | null;
   preImage: string | null;
   finalImage: string | null;
-  status: string; // WAITING | ...
+  status: string;
   note: string | null;
 }
 
@@ -30,7 +30,7 @@ function authHeaders(): HeadersInit {
   const adminToken = localStorage.getItem("admin_token");
   const accessToken = localStorage.getItem("accessToken");
   const token = adminToken || accessToken || "";
-  
+
   return {
     "Content-Type": "application/json",
     Accept: "application/json",
@@ -38,18 +38,57 @@ function authHeaders(): HeadersInit {
   };
 }
 
+async function handleErrorResponse(
+  resp: Response,
+  defaultMessage: string,
+  statusMessages?: Record<number, string>
+): Promise<never> {
+  // Xử lý các mã trạng thái cụ thể
+  if (statusMessages && statusMessages[resp.status]) {
+    throw new Error(statusMessages[resp.status]);
+  }
+
+  // Cố gắng trích xuất thông báo lỗi từ phản hồi
+  let errorMessage = defaultMessage;
+  try {
+    const contentType = resp.headers.get("content-type");
+    const responseText = await resp.text();
+
+    if (contentType?.includes("application/json")) {
+      try {
+        const errorJson = JSON.parse(responseText);
+        errorMessage =
+          errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
+      } catch {
+        errorMessage = responseText || errorMessage;
+      }
+    } else {
+      errorMessage = responseText || errorMessage;
+    }
+  } catch {
+    errorMessage = resp.statusText || errorMessage;
+  }
+
+  throw new Error(errorMessage);
+}
+
 export async function getAllBillings(): Promise<BillingSummary[]> {
   const resp = await fetch(`${API_BASE}/admin/billings`, {
     method: "GET",
     headers: authHeaders(),
   });
+
   if (!resp.ok) {
-  if (resp.status === 401 || resp.status === 403) {
-      throw new Error("Bạn không có quyền xem danh sách đơn thuê.");
-    }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to load billings (${resp.status})`);
+    await handleErrorResponse(
+      resp,
+      `Không thể tải danh sách đơn thuê (${resp.status})`,
+      {
+        401: "Bạn không có quyền xem danh sách đơn thuê.",
+        403: "Bạn không có quyền xem danh sách đơn thuê.",
+      }
+    );
   }
+
   return (await resp.json()) as BillingSummary[];
 }
 
@@ -58,16 +97,19 @@ export async function getBillingById(id: number): Promise<BillingDetail> {
     method: "GET",
     headers: authHeaders(),
   });
+
   if (!resp.ok) {
-    if (resp.status === 401 || resp.status === 403) {
-      throw new Error("Bạn không có quyền xem đơn thuê này.");
-    }
-    if (resp.status === 404) {
-      throw new Error("Không tìm thấy đơn thuê.");
-    }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to load billing (${resp.status})`);
+    await handleErrorResponse(
+      resp,
+      `Không thể tải đơn thuê (${resp.status})`,
+      {
+        401: "Bạn không có quyền xem đơn thuê này.",
+        403: "Bạn không có quyền xem đơn thuê này.",
+        404: "Không tìm thấy đơn thuê.",
+      }
+    );
   }
+
   return (await resp.json()) as BillingDetail;
 }
 
@@ -76,16 +118,17 @@ export async function deleteBilling(id: number): Promise<void> {
     method: "DELETE",
     headers: authHeaders(),
   });
+
   if (!resp.ok) {
-    if (resp.status === 401 || resp.status === 403) {
-      throw new Error("Bạn không có quyền xóa đơn thuê này.");
-    }
-    if (resp.status === 404) {
-      throw new Error("Không tìm thấy đơn thuê để xóa.");
-    }
-    const text = await resp.text().catch(() => resp.statusText);
-    throw new Error(text || `Failed to delete billing (${resp.status})`);
+    await handleErrorResponse(
+      resp,
+      `Không thể xóa đơn thuê (${resp.status})`,
+      {
+        401: "Bạn không có quyền xóa đơn thuê này.",
+        403: "Bạn không có quyền xóa đơn thuê này.",
+        404: "Không tìm thấy đơn thuê để xóa.",
+      }
+    );
   }
 }
-
 

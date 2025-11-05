@@ -101,7 +101,7 @@ export async function checkModelAvailability(modelId: number): Promise<any> {
   return await resp.json();
 }
 
-// Tạo model mới (multipart/form-data với file ảnh)
+// Tạo model mới 
 export async function createModel(
   name: string,
   type: "CAR" | "BIKE",
@@ -126,7 +126,7 @@ export async function createModel(
     method: "POST",
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // Không set Content-Type để browser tự set với boundary
+      
     },
     body: form,
   });
