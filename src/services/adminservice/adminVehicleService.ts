@@ -21,8 +21,6 @@ export interface CreateVehicleRequest {
   code: string;
   modelId: number;
   stationId: number;
-  pricePerDay: number;
-  photoUrl: string;
   currentPin?: number;
 }
 

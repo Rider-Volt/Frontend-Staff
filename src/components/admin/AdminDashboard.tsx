@@ -47,62 +47,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Định dạng ngày để hiển thị (ví dụ: "Th 5, 30 thg 10")
-  const formatDateForDisplay = (date: Date | string) => {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    const dayName = dateObj.toLocaleDateString('vi-VN', { weekday: 'short' });
-    const dayNumber = dateObj.getDate();
-    const month = dateObj.getMonth() + 1;
-    return `${dayName}, ${dayNumber} thg ${month}`;
-  };
-
-  // Tạo dữ liệu doanh thu trong 7 ngày (dự phòng nếu API không khả dụng)
-  const getLast7DaysData = () => {
-    const days = [];
-    const today = new Date();
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(today);
-      date.setDate(date.getDate() - i);
-      days.push({
-        date: date,
-        revenue: Math.floor(Math.random() * 5000000) + 1000000, // Random revenue between 1M and 6M
-      });
-    }
-    return days;
-  };
-
- // Xử lý dữ liệu doanh thu từ API hoặc dự phòng
-  const processedRevenueData = dashboardData?.revenueData && dashboardData.revenueData.length > 0
-    ? dashboardData.revenueData.map(item => {
-        let date: Date;
-        if (item.day) {
-          date = typeof item.day === 'string' ? new Date(item.day) : new Date(item.day);
-        } else if (item.month) {
-          
-          date = new Date();
-        } else {
-        
-          date = new Date();
-        }
-       
-        if (isNaN(date.getTime())) {
-          date = new Date();
-        }
-        return {
-          date: date,
-          revenue: item.revenue || 0
-        };
-      })
-    : getLast7DaysData();
-
-  const revenueData = processedRevenueData;
-
-  // Tính tổng doanh thu
-  const totalRevenue = revenueData.reduce((sum, item) => sum + (item.revenue || 0), 0);
-  
-  // Tìm doanh thu tối đa để tính toán thanh tiến trình
-  const maxRevenue = Math.max(...revenueData.map(item => item.revenue || 0), 1);
-
   const formatCurrency = (amount: number) => {
     return `${amount.toLocaleString('vi-VN')}₫`;
   };
@@ -205,57 +149,6 @@ const AdminDashboard = () => {
               </Card>
             </div>
           )}
-
-          {/* Revenue Section */}
-          <Card className="bg-white rounded-xl shadow-sm border border-gray-100">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div>
-                  <CardTitle className="text-xl font-bold text-gray-800 mb-1">
-                    Doanh thu 7 ngày gần nhất
-                  </CardTitle>
-                  <p className="text-sm text-gray-600">Theo dõi xu hướng doanh thu hàng ngày</p>
-                </div>
-                <div className="bg-teal-500 text-white px-4 py-2 rounded-lg font-semibold">
-                  Tổng: {formatCurrency(totalRevenue)}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {revenueData.map((item, index) => {
-                  const revenue = item.revenue || 0;
-                  const percentage = (revenue / maxRevenue) * 100;
-                  const displayDate = formatDateForDisplay(item.date);
-                  
-                  return (
-                    <div key={index} className="flex items-center gap-4">
-                      <div className="w-36 text-sm text-gray-700 font-medium">
-                        {displayDate}
-                      </div>
-                      <div className="flex-1 relative">
-                        <div className="w-full h-8 bg-gray-200 rounded-full overflow-hidden">
-                          <div 
-                            className="h-full bg-teal-500 rounded-full flex items-center justify-end pr-3 transition-all duration-300"
-                            style={{ width: `${percentage}%`, minWidth: revenue > 0 ? '60px' : '0' }}
-                          >
-                            {revenue > 0 && (
-                              <span className="text-white text-xs font-semibold">
-                                {formatCurrency(revenue)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="w-28 text-right text-sm font-semibold text-gray-800">
-                        {formatCurrency(revenue)}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Đơn thuê theo trạng thái */}
           <Card className="bg-white rounded-xl shadow-sm border border-gray-100">

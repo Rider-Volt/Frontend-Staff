@@ -27,7 +27,7 @@ const navigation = [
   { name: "Quản lý xe", href: "/vehicles", icon: Car },
   { name: "Giao/Trả xe", href: "/handover", icon: ClipboardCheck },
   // { name: "Thanh toán", href: "/payment", icon: CreditCard },
-  { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
+  // { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
   { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
   { name: 'Quản lý khách hàng', href: '/accounts', icon: Users },
 ];

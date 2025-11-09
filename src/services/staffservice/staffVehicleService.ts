@@ -78,8 +78,16 @@ export async function getStaffVehiclesByStatus(status: string): Promise<StaffVeh
 
 // Cập nhật trạng thái xe
 export async function updateVehicleStatus(vehicleId: number, status: string): Promise<StaffVehicle> {
+  // Validate status
+  const validStatuses: VehicleStatus[] = ['AVAILABLE', 'BOOKED', 'RENTED', 'MAINTENANCE', 'RESERVED', 'LOCKED'];
+  const normalizedStatus = status.toUpperCase() as VehicleStatus;
+  
+  if (!validStatuses.includes(normalizedStatus)) {
+    throw new Error(`Trạng thái không hợp lệ. Các trạng thái hợp lệ: ${validStatuses.join(', ')}`);
+  }
+  
   const updateData: UpdateVehicleStatusRequest = {
-    status: status
+    status: normalizedStatus
   };
   
   console.log('Staff updating vehicle status - ID:', vehicleId);
@@ -131,6 +139,12 @@ export function getVehicleStatusInfo(status: string) {
         className: 'bg-green-100 text-green-800', 
         text: 'Sẵn sàng' 
       };
+    case 'BOOKED':
+      return { 
+        variant: 'secondary' as const, 
+        className: 'bg-orange-100 text-orange-800', 
+        text: 'Đã đặt' 
+      };
     case 'RENTED':
       return { 
         variant: 'secondary' as const, 
@@ -166,4 +180,4 @@ export function getVehicleStatusInfo(status: string) {
 }
 
 // Loại trạng thái xe dựa trên tài liệu API
-export type VehicleStatus = 'AVAILABLE' | 'RENTED' | 'MAINTENANCE' | 'RESERVED' | 'LOCKED';
+export type VehicleStatus = 'AVAILABLE' | 'BOOKED' | 'RENTED' | 'MAINTENANCE' | 'RESERVED' | 'LOCKED';

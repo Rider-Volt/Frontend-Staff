@@ -271,7 +271,7 @@ const StaffHandoverPage = () => {
       );
       toast.success("Upload ảnh hợp đồng thành công!");
     } catch (err: any) {
-      console.error("❌ Lỗi upload ảnh hợp đồng:", err);
+      console.error(" Lỗi upload ảnh hợp đồng:", err);
       toast.error(err?.message || "Không thể upload ảnh hợp đồng");
     } finally {
       setIsUploadingContractAfter(false);
@@ -296,12 +296,36 @@ const StaffHandoverPage = () => {
       toast.error("Chọn ảnh xe trước khi giao");
       return;
     }
-    console.log(" Giao xe - File ảnh:", deliveryFile);
-    console.log(" Billing ID:", selectedBilling.id);
+    console.log("🚗 Giao xe - File ảnh xe:", deliveryFile);
+    console.log("📋 Billing ID:", selectedBilling.id);
+    console.log("📸 File ảnh hợp đồng trước ký:", contractBeforeImage);
+    console.log("📸 File ảnh hợp đồng sau ký:", contractAfterImage);
     try {
-      console.log(" Đang check-in với ảnh...");
-      await checkInByBillingId(selectedBilling.id, deliveryFile);
-      toast.success("Giao xe thành công (đã check-in)!");
+      console.log("⏳ Đang check-in với ảnh xe và ảnh hợp đồng...");
+      const updatedBilling = await checkInByBillingId(
+        selectedBilling.id, 
+        deliveryFile,
+        contractBeforeImage || undefined,
+        contractAfterImage || undefined
+      );
+      console.log("✅ Check-in thành công, billing đã cập nhật:", updatedBilling);
+      
+      // Cập nhật billing trong danh sách với dữ liệu mới từ server
+      setBillingsByPhone(prev => 
+        prev.map(b => b.id === updatedBilling.id ? updatedBilling : b)
+      );
+      
+      // Cập nhật preview ảnh hợp đồng từ URL server nếu có
+      if (updatedBilling.contractBeforeImage && contractBeforeImagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(contractBeforeImagePreview);
+        setContractBeforeImagePreview(updatedBilling.contractBeforeImage);
+      }
+      if (updatedBilling.contractAfterImage && contractAfterImagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(contractAfterImagePreview);
+        setContractAfterImagePreview(updatedBilling.contractAfterImage);
+      }
+      
+      toast.success("Giao xe thành công ");
       // Reset
       setPreImageUrl("");
       setDeliveryNote("");
@@ -330,7 +354,7 @@ const StaffHandoverPage = () => {
       setInUseBillings(rentingByPhone);
       if (rentingByPhone.length === 0) toast.info("Số này không có đơn đang thuê");
     } catch (err: any) {
-      toast.error(err?.message || "Không thể tải đơn IN_USE");
+      toast.error(err?.message || "Không thể tải đơn ");
     } finally {
       setLoadingInUse(false);
     }
@@ -559,26 +583,17 @@ const StaffHandoverPage = () => {
                         </div>
                       </Button>
                     )}
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleUploadContractBeforeImage}
-                        disabled={!contractBeforeImage || !selectedBilling || isUploadingContract}
-                      >
-                        {isUploadingContract ? "Đang upload..." : "Upload"}
-                      </Button>
-                      {contractBeforeImagePreview && (
+                    {contractBeforeImagePreview && (
+                      <div className="flex gap-2 justify-end">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={clearContractBeforeImage}
-                          disabled={isUploadingContract}
                         >
                           Xóa
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <input
                       id="contract-before-image-input"
                       type="file"
@@ -616,26 +631,17 @@ const StaffHandoverPage = () => {
                         </div>
                       </Button>
                     )}
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleUploadContractAfterImage}
-                        disabled={!contractAfterImage || !selectedBilling || isUploadingContractAfter}
-                      >
-                        {isUploadingContractAfter ? "Đang upload..." : "Upload"}
-                      </Button>
-                      {contractAfterImagePreview && (
+                    {contractAfterImagePreview && (
+                      <div className="flex gap-2 justify-end">
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={clearContractAfterImage}
-                          disabled={isUploadingContractAfter}
                         >
                           Xóa
                         </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                     <input
                       id="contract-after-image-input"
                       type="file"

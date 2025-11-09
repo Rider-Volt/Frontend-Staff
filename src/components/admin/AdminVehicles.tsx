@@ -68,8 +68,6 @@ const AdminVehicles = () => {
     code: '',
     modelId: 0,
     stationId: 0,
-    pricePerDay: 0,
-    photoUrl: '',
     currentPin: 0
   });
 
@@ -191,10 +189,6 @@ const AdminVehicles = () => {
       alert('Vui lòng chọn trạm xe!');
       return;
     }
-    if (newVehicle.pricePerDay < 0) {
-      alert('Giá thuê/ngày không được âm!');
-      return;
-    }
     if (newVehicle.currentPin < 0 || newVehicle.currentPin > 100) {
       alert('Pin level phải từ 0 đến 100!');
       return;
@@ -205,8 +199,6 @@ const AdminVehicles = () => {
         code: newVehicle.code,
         modelId: newVehicle.modelId,
         stationId: newVehicle.stationId,
-        pricePerDay: newVehicle.pricePerDay,
-        photoUrl: newVehicle.photoUrl,
         currentPin: newVehicle.currentPin
       };
       
@@ -231,7 +223,7 @@ const AdminVehicles = () => {
       }
 
       setVehicles([...vehicles, createdVehicleWithPin]);
-      setNewVehicle({ code: '', modelId: 0, stationId: 0, pricePerDay: 0, photoUrl: '', currentPin: 0 });
+      setNewVehicle({ code: '', modelId: 0, stationId: 0, currentPin: 0 });
       setIsAddDialogOpen(false);
       alert('Thêm xe thành công!');
     } catch (err) {
@@ -420,41 +412,7 @@ const AdminVehicles = () => {
                 </Select>
                 <p className="text-xs text-gray-500 mt-1">Chọn trạm từ danh sách</p>
               </div>
-              <div>
-                <label className="text-sm font-medium">Giá/ngày (VNĐ) <span className="text-red-500">*</span></label>
-                <Input 
-                  type="number"
-                  placeholder="Nhập giá thuê/ngày (VD: 100000)" 
-                  value={newVehicle.pricePerDay || ''}
-                  onChange={(e) => setNewVehicle({...newVehicle, pricePerDay: parseInt(e.target.value) || 0})}
-                  min="0"
-                  required
-                />
-                <p className="text-xs text-gray-500 mt-1">Giá thuê/ngày không được âm</p>
-              </div>
-              <div>
-                <label className="text-sm font-medium">URL Ảnh</label>
-                <Input 
-                  placeholder="Nhập URL ảnh xe (tùy chọn)" 
-                  value={newVehicle.photoUrl || ''}
-                  onChange={(e) => setNewVehicle({...newVehicle, photoUrl: e.target.value})}
-                />
-                <p className="text-xs text-gray-500 mt-1">Có thể để trống</p>
-                
-                {/* Preview ảnh */}
-                {newVehicle.photoUrl && (
-                  <div className="mt-2 flex justify-center">
-                    <img 
-                      src={newVehicle.photoUrl} 
-                      alt="Preview"
-                      className="h-32 w-48 object-cover rounded-lg border"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
+              {/* Bỏ các trường Giá/ngày và URL Ảnh theo yêu cầu */}
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Hủy

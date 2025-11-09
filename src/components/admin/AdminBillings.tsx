@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Table,
   TableBody,
@@ -57,11 +58,30 @@ const translateStatus = (status: string | null | undefined): string => {
   return statusMap[statusUpper] || status;
 };
 
+const STATUS_FILTER_MAP: Record<string, string[]> = {
+  ALL: [],
+  PENDING: ['PENDING', 'WAITING', 'CONFIRMED', 'APPROVED'],
+  PAID: ['PAID', 'PAYED'],
+  RENTING: ['RENTING', 'ONGOING'],
+  COMPLETED: ['COMPLETED', 'DONE', 'FINISHED'],
+  CANCELLED: ['CANCELLED', 'CANCELED'],
+};
+
+const STATUS_OPTIONS = [
+  { value: 'ALL', label: 'Tất cả' },
+  { value: 'PENDING', label: 'Chờ' },
+  { value: 'PAID', label: 'Đã thanh toán' },
+  { value: 'RENTING', label: 'Đang thuê' },
+  { value: 'COMPLETED', label: 'Hoàn thành' },
+  { value: 'CANCELLED', label: 'Đã hủy' },
+];
+
 const AdminBillings: React.FC = () => {
   const [billings, setBillings] = useState<BillingSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
   const [viewOpen, setViewOpen] = useState(false);
   const [viewBilling, setViewBilling] = useState<BillingDetail | null>(null);
 
@@ -83,8 +103,19 @@ const AdminBillings: React.FC = () => {
 
   const filtered = useMemo(() => {
     const q = searchTerm.trim().toLowerCase();
-    if (!q) return billings;
-    return billings.filter(b => {
+    const next = billings.filter(b => {
+      const statusMatch = statusFilter === 'ALL'
+        ? true
+        : STATUS_FILTER_MAP[statusFilter]?.includes((b.status || '').toUpperCase());
+
+      if (!statusMatch) {
+        return false;
+      }
+
+      if (!q) {
+        return true;
+      }
+
       return (
         b.id.toString().includes(q) ||
         b.renterName.toLowerCase().includes(q) ||
@@ -95,7 +126,9 @@ const AdminBillings: React.FC = () => {
         b.status.toLowerCase().includes(q)
       );
     });
-  }, [billings, searchTerm]);
+
+    return next;
+  }, [billings, searchTerm, statusFilter]);
 
   const handleOpenView = async (id: number) => {
     try {
@@ -138,16 +171,28 @@ const AdminBillings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="relative">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="relative w-full md:w-auto">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input
             placeholder="Tìm kiếm đơn thuê..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 w-80"
+            className="pl-10 w-full md:w-80"
           />
         </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full md:w-48">
+            <SelectValue placeholder="Tất cả" />
+          </SelectTrigger>
+          <SelectContent>
+            {STATUS_OPTIONS.map(option => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <Card>

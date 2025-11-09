@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,15 +11,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
-} from '@/components/ui/dialog';
-import { 
   Search, 
-  Plus, 
   Mail,
   Phone,
   MapPin,
@@ -31,7 +22,6 @@ import { getAllStaff, Staff } from '@/services/adminservice/adminEmployeeService
 const AdminEmployees = () => {
   const [employees, setEmployees] = useState<Staff[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Tải danh sách nhân viên từ API
@@ -79,7 +69,7 @@ const AdminEmployees = () => {
 
   return (
     <div className="space-y-6">
-      {/* Tìm kiếm và Thêm Nhân Viên */}
+      {/* Tìm kiếm nhân viên */}
       <div className="flex justify-between items-center">
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -92,50 +82,6 @@ const AdminEmployees = () => {
             />
           </div>
         </div>
-        
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm Nhân Viên Mới
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Thêm Nhân Viên Mới</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">ID Nhân viên</label>
-                <Input placeholder="Ví dụ: EMP005" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Họ và tên</label>
-                <Input placeholder="Nhập họ và tên" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Email</label>
-                <Input placeholder="email@evstation.com" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Số điện thoại</label>
-                <Input placeholder="0901234567" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Username</label>
-                <Input placeholder="Nhập username" />
-              </div>
-              <div className="flex justify-end space-x-2">
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  Hủy
-                </Button>
-                <Button onClick={() => setIsAddDialogOpen(false)}>
-                  Thêm Nhân Viên
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
 
       {/* Bảng Danh Sách Nhân Viên */}

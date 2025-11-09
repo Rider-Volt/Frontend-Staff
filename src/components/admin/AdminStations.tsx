@@ -353,30 +353,19 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-gray-700">ID Nhân viên (tùy chọn)</label>
-          <Select
-            value={form.staffId && form.staffId > 0 ? form.staffId.toString() : 'none'}
-            onValueChange={(value) => handleChange('staffId', value === 'none' ? 0 : Number(value))}
-            disabled={loadingStaff}
-          >
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="Chọn nhân viên (để trống nếu chưa gán nhân viên)" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none"> nhân viên</SelectItem>
-              {loadingStaff ? (
-                <SelectItem value="loading" disabled>Đang tải danh sách nhân viên...</SelectItem>
-              ) : staffList.length === 0 ? (
-                <SelectItem value="empty" disabled>Không có nhân viên</SelectItem>
-              ) : (
-                staffList.map((staff) => (
-                  <SelectItem key={staff.id} value={staff.id.toString()}>
-                    {staff.name} ({staff.email}){staff.stationName ? ` - ${staff.stationName}` : ''}
-                  </SelectItem>
-                ))
-              )}
-            </SelectContent>
-          </Select>
+          <label className="text-sm font-medium text-gray-700"> Nhân viên </label>
+          <Input
+            type="number"
+            placeholder="Nhập ID nhân viên (để trống nếu chưa gán)"
+            value={form.staffId && form.staffId > 0 ? form.staffId : ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              const parsed = val === '' ? 0 : parseInt(val);
+              handleChange('staffId', isNaN(parsed) ? 0 : parsed);
+            }}
+            className="mt-1"
+            min={0}
+          />
         </div>
       </div>
       <DialogFooter>

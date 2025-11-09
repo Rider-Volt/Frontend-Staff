@@ -258,7 +258,6 @@ export async function uploadContractBeforeImage(id: number, file: File): Promise
     method: "PATCH",
     headers: { 
       ...authHeaders(),
-      // KHÔNG đặt Content-Type cho FormData để trình duyệt tự set boundary
     },
     body: form,
   });
@@ -266,29 +265,8 @@ export async function uploadContractBeforeImage(id: number, file: File): Promise
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền upload ảnh hợp đồng.");
     }
-    if (resp.status === 404) {
-      throw new Error("Không tìm thấy đơn hàng.");
-    }
-    // Thử parse JSON error message
-    let errorMessage = `Lỗi upload ảnh hợp đồng (${resp.status})`;
-    try {
-      const contentType = resp.headers.get("content-type");
-      const responseText = await resp.text();
-      
-      if (contentType && contentType.includes("application/json")) {
-        try {
-          const errorJson = JSON.parse(responseText);
-          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
-        } catch {
-          errorMessage = responseText || errorMessage;
-        }
-      } else {
-        errorMessage = responseText || errorMessage;
-      }
-    } catch (parseError) {
-      errorMessage = resp.statusText || errorMessage;
-    }
-    throw new Error(errorMessage);
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to upload contract before image (${resp.status})`);
   }
   return (await resp.json()) as BillingResponse;
 }
@@ -301,7 +279,6 @@ export async function uploadContractAfterImage(id: number, file: File): Promise<
     method: "PATCH",
     headers: { 
       ...authHeaders(),
-      // KHÔNG đặt Content-Type cho FormData để trình duyệt tự set boundary
     },
     body: form,
   });
@@ -309,29 +286,8 @@ export async function uploadContractAfterImage(id: number, file: File): Promise<
     if (resp.status === 401 || resp.status === 403) {
       throw new Error("Bạn không có quyền upload ảnh hợp đồng.");
     }
-    if (resp.status === 404) {
-      throw new Error("Không tìm thấy đơn hàng.");
-    }
-    // Thử parse JSON error message
-    let errorMessage = `Lỗi upload ảnh hợp đồng (${resp.status})`;
-    try {
-      const contentType = resp.headers.get("content-type");
-      const responseText = await resp.text();
-      
-      if (contentType && contentType.includes("application/json")) {
-        try {
-          const errorJson = JSON.parse(responseText);
-          errorMessage = errorJson?.message || errorJson?.error || errorJson?.detail || errorMessage;
-        } catch {
-          errorMessage = responseText || errorMessage;
-        }
-      } else {
-        errorMessage = responseText || errorMessage;
-      }
-    } catch (parseError) {
-      errorMessage = resp.statusText || errorMessage;
-    }
-    throw new Error(errorMessage);
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to upload contract after image (${resp.status})`);
   }
   return (await resp.json()) as BillingResponse;
 }
@@ -433,11 +389,22 @@ export async function inspectReturnedVehicle(
   return (await resp.json()) as BillingResponse;
 }
 
-// Check-in bằng billing ID (có thể kèm preImage)
-export async function checkInByBillingId(id: number, preImageFile?: File): Promise<BillingResponse> {
+// Check-in bằng billing ID (có thể kèm preImage và ảnh hợp đồng)
+export async function checkInByBillingId(
+  id: number, 
+  preImageFile?: File,
+  contractBeforeImageFile?: File,
+  contractAfterImageFile?: File
+): Promise<BillingResponse> {
   const form = new FormData();
   if (preImageFile) {
     form.append("preImage", preImageFile);
+  }
+  if (contractBeforeImageFile) {
+    form.append("contractBeforeImage", contractBeforeImageFile);
+  }
+  if (contractAfterImageFile) {
+    form.append("contractAfterImage", contractAfterImageFile);
   }
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/check-in`, {
     method: "POST",

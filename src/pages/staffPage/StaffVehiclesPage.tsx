@@ -120,27 +120,27 @@ const StaffVehiclesPage = () => {
   }, [vehicles, search]);
 
  // Tính toán số liệu thống kê cho thẻ bảng điều khiển
-  const { availableCount, rentedCount, maintenanceCount, reservedCount, lockedCount, averagePin } = useMemo(() => {
-    if (!vehicles.length) return { availableCount: 0, rentedCount: 0, maintenanceCount: 0, reservedCount: 0, lockedCount: 0, averagePin: 0 };
+  const { availableCount, bookedCount, rentedCount, maintenanceCount, lockedCount, averagePin } = useMemo(() => {
+    if (!vehicles.length) return { availableCount: 0, bookedCount: 0, rentedCount: 0, maintenanceCount: 0, lockedCount: 0, averagePin: 0 };
     const counts = vehicles.reduce(
       (acc, v) => {
         const s = (v.status || "").toUpperCase();
         if (s === "AVAILABLE") acc.available += 1;
+        else if (s === "BOOKED") acc.booked += 1;
         else if (s === "RENTED") acc.rented += 1;
         else if (s === "MAINTENANCE") acc.maintenance += 1;
-        else if (s === "RESERVED") acc.reserved += 1;
         else if (s === "LOCKED") acc.locked += 1;
         acc.pinSum += Number.isFinite(v.currentPin) ? v.currentPin : 0;
         return acc;
       },
-      { available: 0, rented: 0, maintenance: 0, reserved: 0, locked: 0, pinSum: 0 }
+      { available: 0, booked: 0, rented: 0, maintenance: 0, locked: 0, pinSum: 0 }
     );
     const avg = Math.round(counts.pinSum / Math.max(vehicles.length, 1));
     return { 
-      availableCount: counts.available, 
+      availableCount: counts.available,
+      bookedCount: counts.booked,
       rentedCount: counts.rented, 
       maintenanceCount: counts.maintenance,
-      reservedCount: counts.reserved,
       lockedCount: counts.locked,
       averagePin: avg 
     };
@@ -261,9 +261,9 @@ const StaffVehiclesPage = () => {
                   <SelectContent>
                     <SelectItem value="all">Tất cả trạng thái</SelectItem>
                     <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+                    <SelectItem value="BOOKED">Đã đặt</SelectItem>
                     <SelectItem value="RENTED">Đang thuê</SelectItem>
                     <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
-                    <SelectItem value="RESERVED">Đã đặt trước</SelectItem>
                     <SelectItem value="LOCKED">Đã khóa</SelectItem>
                   </SelectContent>
                 </Select>
@@ -397,9 +397,9 @@ const StaffVehiclesPage = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="AVAILABLE">Sẵn sàng</SelectItem>
+                      <SelectItem value="BOOKED">Đã đặt</SelectItem>
                       <SelectItem value="RENTED">Đang thuê</SelectItem>
                       <SelectItem value="MAINTENANCE">Bảo trì</SelectItem>
-                      <SelectItem value="RESERVED">Đã đặt trước</SelectItem>
                       <SelectItem value="LOCKED">Đã khóa</SelectItem>
                     </SelectContent>
                   </Select>
