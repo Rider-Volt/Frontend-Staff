@@ -147,6 +147,16 @@ const StaffHandoverPage = () => {
 
   // Không cần tương tác với danh sách kiểm tra hư hỏng
 
+  const formatBillingPeriod = (b: BillingResponse) => {
+    if (b.plannedStartDate && b.plannedEndDate) {
+      return `${new Date(b.plannedStartDate).toLocaleDateString()} → ${new Date(b.plannedEndDate).toLocaleDateString()}`;
+    }
+    if (b.startTime && b.endTime) {
+      return `${new Date(b.startTime).toLocaleString()} → ${new Date(b.endTime).toLocaleString()}`;
+    }
+    return "-";
+  };
+
   const handleSearchByPhone = async () => {
     if (!phoneQuery.trim()) {
       toast.error("Nhập số điện thoại");
@@ -483,7 +493,7 @@ const StaffHandoverPage = () => {
                         <SelectContent>
                           {billingsByPhone.map((b) => (
                             <SelectItem key={b.id} value={String(b.id)}>
-                              {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"}`}
+                              {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -740,7 +750,7 @@ const StaffHandoverPage = () => {
                           <SelectContent>
                             {inUseBillings.map((b) => (
                               <SelectItem key={b.id} value={String(b.id)}>
-                                {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"}`}
+                                {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
                               </SelectItem>
                             ))}
                           </SelectContent>
