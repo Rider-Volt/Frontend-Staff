@@ -59,6 +59,7 @@ const AdminVehicles = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<string>('all');
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
@@ -141,9 +142,32 @@ const AdminVehicles = () => {
     fetchStations();
   }, []);
 
-  // Lọc xe dựa trên từ khóa tìm kiếm
+  // Lọc xe dựa trên từ khóa tìm kiếm và loại xe
   const filteredVehicles = vehicles.filter(vehicle => {
-    // Nếu search term rỗng, hiển thị tất cả xe
+    // Lọc theo loại xe
+    if (vehicleTypeFilter !== 'all') {
+      const vehicleTypeLower = vehicle.vehicleType?.toLowerCase() || '';
+      if (vehicleTypeFilter === 'car') {
+        // Kiểm tra các từ khóa liên quan đến ô tô
+        if (!vehicleTypeLower.includes('car') && 
+            !vehicleTypeLower.includes('ô tô') && 
+            !vehicleTypeLower.includes('oto') &&
+            !vehicleTypeLower.includes('xe 4 bánh')) {
+          return false;
+        }
+      } else if (vehicleTypeFilter === 'motorbike') {
+        // Kiểm tra các từ khóa liên quan đến xe máy
+        if (!vehicleTypeLower.includes('motor') && 
+            !vehicleTypeLower.includes('xe máy') && 
+            !vehicleTypeLower.includes('xemay') &&
+            !vehicleTypeLower.includes('xe 2 bánh') &&
+            !vehicleTypeLower.includes('bike')) {
+          return false;
+        }
+      }
+    }
+    
+    // Lọc theo từ khóa tìm kiếm
     if (!searchTerm.trim()) {
       return true;
     }
@@ -333,13 +357,24 @@ const AdminVehicles = () => {
           </div>
         </div>
         
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Thêm Xe Mới
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center space-x-4">
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-green-600 hover:bg-green-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Thêm Xe Mới
+              </Button>
+            </DialogTrigger>
+          <Select value={vehicleTypeFilter} onValueChange={setVehicleTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Lọc theo loại xe" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tất cả loại xe</SelectItem>
+              <SelectItem value="car">Ô tô</SelectItem>
+              <SelectItem value="motorbike">Xe máy</SelectItem>
+            </SelectContent>
+          </Select>
           <DialogContent className="max-w-lg">
             <DialogHeader>
               <DialogTitle>Thêm Xe Mới</DialogTitle>
@@ -424,6 +459,8 @@ const AdminVehicles = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
+      </div>
 
          {/* Dialog Xem Chi Tiết Xe */}
          <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
@@ -583,7 +620,6 @@ const AdminVehicles = () => {
             )}
           </DialogContent>
         </Dialog>
-      </div>
 
       {/* Bảng Danh Sách Xe */}
       <Card>

@@ -146,6 +146,15 @@ export async function createVehicle(data: CreateVehicleRequest): Promise<Vehicle
       errorMessage = text || errorMessage;
     }
     
+    // Kiểm tra lỗi trùng biển số xe
+    const errorLower = errorMessage.toLowerCase();
+    if (errorLower.includes('duplicate key') || 
+        errorLower.includes('vehicles_code_key') ||
+        errorLower.includes('already exists') ||
+        errorLower.includes('unique constraint')) {
+      throw new Error("Biển số xe đã có");
+    }
+    
     throw new Error(errorMessage);
   }
   
