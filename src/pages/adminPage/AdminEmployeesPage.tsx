@@ -15,7 +15,7 @@ const AdminEmployeesPage = () => {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-3xl font-bold text-gray-800">Quản Lý Nhân Viên</h1>
-              <p className="text-gray-600">Quản lý thông tin nhân viên</p>
+              <p className="text-gray-600">Xem danh sách nhân viên tại từng điểm thuê và thực hiện phân công.</p>
             </div>
             <div className="flex space-x-2">
               <Button 

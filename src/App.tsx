@@ -11,6 +11,8 @@ import StaffIssues from "./pages/staffPage/staffIssues";
 import StaffVehiclesPage from "./pages/staffPage/StaffVehiclesPage";
 import StaffStationOrdersPage from "./pages/staffPage/StaffStationOrdersPage";
 import StaffAccountManagementPage from "./pages/staffPage/StaffAccountManagementPage";
+import StaffIdentityVerificationPage from "./pages/staffPage/StaffIdentityVerificationPage";
+import StaffReportsPage from "./pages/staffPage/StaffReportsPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
@@ -69,6 +71,16 @@ const App = () => (
           <Route path="/accounts" element={
             <ProtectedRoute requiredRole="staff">
               <StaffAccountManagementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/identity-verification" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffIdentityVerificationPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reports" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffReportsPage />
             </ProtectedRoute>
           } />
           

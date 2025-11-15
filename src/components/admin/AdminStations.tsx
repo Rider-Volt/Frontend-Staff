@@ -4,17 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MapPin, Plus, Pencil, Trash2 } from 'lucide-react';
 import {Table,TableBody,TableCell,TableHead,TableHeader,TableRow,} from '@/components/ui/table';
 import { useToast } from '@/components/ui/use-toast';
-import { 
-  getAllStations, 
-  createStation, 
-  updateStation, 
+import { getStationStaff } from '@/services/adminservice/adminEmployeeService';
+import {
+  getAllStations,
+  createStation,
+  updateStation,
   deleteStation,
-  type Station as StationData 
+  type Station as StationData,
 } from '@/services/adminservice/adminStationService';
-import { getAllStaff, type Staff } from '@/services/adminservice/adminEmployeeService';
 
 interface Station {
   id: string;
@@ -22,6 +23,7 @@ interface Station {
   address: string;
   staffId: number;
   staffFullName: string;
+  staffCount: number;
   totalVehicles: number;
 }
 
@@ -41,15 +43,27 @@ const AdminStations = () => {
     try {
       setLoading(true);
       const data = await getAllStations();
-      // Chuyển đổi dữ liệu API sang giao diện cục bộ
-      const mappedData: Station[] = data.map(s => ({
-        id: s.id.toString(),
-        name: s.name,
-        address: s.address,
-        staffId: s.staffId,
-        staffFullName: s.staffFullName || '',
-        totalVehicles: s.totalVehicles,
-      }));
+      const mappedData: Station[] = await Promise.all(
+        data.map(async (station: StationData) => {
+          let staffCount = 0;
+          try {
+            const staff = await getStationStaff(station.id);
+            staffCount = staff.filter((member) => member.isActive).length;
+          } catch (error) {
+            console.error(`Failed to load staff for station ${station.id}:`, error);
+          }
+
+          return {
+            id: station.id.toString(),
+            name: station.name,
+            address: station.address,
+            staffId: station.staffId ?? 0,
+            staffFullName: station.staffFullName || "",
+            staffCount,
+            totalVehicles: station.totalVehicles ?? 0,
+          };
+        })
+      );
       setStations(mappedData);
     } catch (error) {
       toast({
@@ -191,7 +205,7 @@ const AdminStations = () => {
                   <TableHead>Địa chỉ</TableHead>
                   <TableHead>Số xe</TableHead>
                   <TableHead>Nhân viên</TableHead>
-                  <TableHead className="text-right">Cập nhập</TableHead>
+                  <TableHead className="text-right">Thao tác</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -217,16 +231,43 @@ const AdminStations = () => {
                       <TableCell>{s.name}</TableCell>
                       <TableCell className="text-gray-600">{s.address}</TableCell>
                       <TableCell className="font-medium">{s.totalVehicles}</TableCell>
-                      <TableCell className="text-sm text-gray-600">{s.staffFullName || 'Chưa gán'}</TableCell>
+                      <TableCell className="text-sm text-gray-600">
+                        {s.staffCount > 0
+                          ? `${s.staffCount} nhân viên`
+                          : s.staffFullName
+                          ? s.staffFullName
+                          : 'Chưa gán'}
+                      </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end space-x-2">
-                          <Button variant="outline" size="sm" onClick={() => { setEditing(s); setOpen(true); }}>
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button variant="outline" size="sm" onClick={() => handleDelete(s.id)} className="text-red-600 hover:text-red-700">
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-9 w-9 rounded-full bg-green-50 hover:bg-green-100 border-green-100"
+                            >
+                              <span className="text-xl leading-none">⋯</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onSelect={() => {
+                                setEditing(s);
+                                setOpen(true);
+                              }}
+                            >
+                              <Pencil className="h-4 w-4 mr-2" />
+                              Chỉnh sửa
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={() => handleDelete(s.id)}
+                              className="text-red-600 focus:text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Xóa trạm
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
@@ -252,13 +293,11 @@ interface StationFormModalProps {
 }
 
 const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
-  const defaultStation: Station = { id: '', name: '', address: '', staffId: 0, staffFullName: '', totalVehicles: 0 };
+const defaultStation: Station = { id: '', name: '', address: '', staffId: 0, staffFullName: '', staffCount: 0, totalVehicles: 0 };
   
   const [form, setForm] = useState<Station>(
     editing || defaultStation
   );
-  const [staffList, setStaffList] = useState<Staff[]>([]);
-  const [loadingStaff, setLoadingStaff] = useState(false);
   const { toast } = useToast();
 
   const isEdit = Boolean(editing);
@@ -267,25 +306,7 @@ const StationFormModal = ({ editing, onSave }: StationFormModalProps) => {
     setForm(editing || defaultStation);
   }, [editing]);
 
-  useEffect(() => {
-    const loadStaff = async () => {
-      try {
-        setLoadingStaff(true);
-        const staff = await getAllStaff();
-        setStaffList(staff);
-      } catch (error) {
-        console.error('Lỗi khi tải danh sách nhân viên:', error);
-        toast({
-          title: "Cảnh báo",
-          description: "Không thể tải danh sách nhân viên",
-          variant: "destructive",
-        });
-      } finally {
-        setLoadingStaff(false);
-      }
-    };
-    loadStaff();
-  }, []);
+  // Không cần tải danh sách nhân viên ở đây vì form hiện tại nhập ID thủ công
 
   const handleChange = (key: keyof Station, value: string | number) => {
     setForm(prev => ({ ...prev, [key]: value } as Station));

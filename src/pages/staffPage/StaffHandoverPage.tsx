@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, Check } from "lucide-react";
+import { Camera, Check, X, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -45,33 +45,51 @@ const StaffHandoverPage = () => {
   const [contractAfterImage, setContractAfterImage] = useState<File | null>(null);
   const [contractAfterImagePreview, setContractAfterImagePreview] = useState<string>("");
   const [isUploadingContractAfter, setIsUploadingContractAfter] = useState(false);
+  const [isConfirmingDelivery, setIsConfirmingDelivery] = useState(false);
+  const [odometerOutKm, setOdometerOutKm] = useState<string>("0");
+  const [batteryOutPercent, setBatteryOutPercent] = useState<string>("100");
 
-  // Xem trước ảnh đã chọn từ thư viện (giao xe)
-  const [deliveryPhoto, setDeliveryPhoto] = useState<string>("");
-  const [deliveryFile, setDeliveryFile] = useState<File | null>(null);
+  // Xem trước ảnh đã chọn từ thư viện (giao xe) - hỗ trợ nhiều ảnh
+  const [deliveryPhotos, setDeliveryPhotos] = useState<Array<{ file: File; preview: string }>>([]);
 
   const handlePickDelivery = () => {
     const inputId = `delivery-photo-input`;
     const el = document.getElementById(inputId) as HTMLInputElement | null;
-    if (el) el.click();
+    if (el) {
+      el.multiple = true;
+      el.click();
+    }
   };
 
-  const onDeliveryFileChange = (file?: File | null) => {
-    if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    if (deliveryPhoto) {
-      URL.revokeObjectURL(deliveryPhoto);
-    }
-    setDeliveryPhoto(objectUrl);
-    setDeliveryFile(file);
+  const onDeliveryFileChange = (files?: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const newPhotos: Array<{ file: File; preview: string }> = [];
+    Array.from(files).forEach((file) => {
+      const objectUrl = URL.createObjectURL(file);
+      newPhotos.push({ file, preview: objectUrl });
+    });
+    
+    setDeliveryPhotos((prev) => [...prev, ...newPhotos]);
   };
 
-  const clearDeliveryPhoto = () => {
-    if (deliveryPhoto) {
-      URL.revokeObjectURL(deliveryPhoto);
-    }
-    setDeliveryPhoto("");
-    setDeliveryFile(null);
+  const removeDeliveryPhoto = (index: number) => {
+    setDeliveryPhotos((prev) => {
+      const photoToRemove = prev[index];
+      if (photoToRemove?.preview) {
+        URL.revokeObjectURL(photoToRemove.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const clearDeliveryPhotos = () => {
+    deliveryPhotos.forEach((photo) => {
+      if (photo.preview) {
+        URL.revokeObjectURL(photo.preview);
+      }
+    });
+    setDeliveryPhotos([]);
   };
 
   const selectedBilling: BillingResponse | undefined = useMemo(
@@ -86,33 +104,51 @@ const StaffHandoverPage = () => {
   const [finalImageUrl, setFinalImageUrl] = useState("");
   const [penaltyCost, setPenaltyCost] = useState<string>("0");
   const [returnNote, setReturnNote] = useState("");
+  const [odometerInKm, setOdometerInKm] = useState<string>("0");
+  const [batteryInPercent, setBatteryInPercent] = useState<string>("100");
+  const [isConfirmingReturn, setIsConfirmingReturn] = useState(false);
 
-  // Xem trước ảnh đã chọn từ thư viện (trả xe)
-  const [returnPhoto, setReturnPhoto] = useState<string>("");
-  const [returnFile, setReturnFile] = useState<File | null>(null);
+  // Xem trước ảnh đã chọn từ thư viện (trả xe) - hỗ trợ nhiều ảnh
+  const [returnPhotos, setReturnPhotos] = useState<Array<{ file: File; preview: string }>>([]);
 
   const handlePickReturn = () => {
     const inputId = `return-photo-input`;
     const el = document.getElementById(inputId) as HTMLInputElement | null;
-    if (el) el.click();
+    if (el) {
+      el.multiple = true;
+      el.click();
+    }
   };
 
-  const onReturnFileChange = (file?: File | null) => {
-    if (!file) return;
-    const objectUrl = URL.createObjectURL(file);
-    if (returnPhoto) {
-      URL.revokeObjectURL(returnPhoto);
-    }
-    setReturnPhoto(objectUrl);
-    setReturnFile(file);
+  const onReturnFileChange = (files?: FileList | null) => {
+    if (!files || files.length === 0) return;
+    
+    const newPhotos: Array<{ file: File; preview: string }> = [];
+    Array.from(files).forEach((file) => {
+      const objectUrl = URL.createObjectURL(file);
+      newPhotos.push({ file, preview: objectUrl });
+    });
+    
+    setReturnPhotos((prev) => [...prev, ...newPhotos]);
   };
 
-  const clearReturnPhoto = () => {
-    if (returnPhoto) {
-      URL.revokeObjectURL(returnPhoto);
-    }
-    setReturnPhoto("");
-    setReturnFile(null);
+  const removeReturnPhoto = (index: number) => {
+    setReturnPhotos((prev) => {
+      const photoToRemove = prev[index];
+      if (photoToRemove?.preview) {
+        URL.revokeObjectURL(photoToRemove.preview);
+      }
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const clearReturnPhotos = () => {
+    returnPhotos.forEach((photo) => {
+      if (photo.preview) {
+        URL.revokeObjectURL(photo.preview);
+      }
+    });
+    setReturnPhotos([]);
   };
 
   const selectedReturnBilling: BillingResponse | undefined = useMemo(
@@ -164,24 +200,40 @@ const StaffHandoverPage = () => {
     }
     try {
       setIsSearching(true);
-      const data = await getBillingsByPhone(phoneQuery.trim());
-      // Only show paid/approved bookings for Delivery tab
-      const paid = data.filter((b) => b.status === "PAYED" || b.status === "APPROVED");
-      setBillingsByPhone(paid);
-      // For Return tab, narrow list to only RENTING invoices of this phone
       if (activeTab === "return") {
+        setLoadingInUse(true);
+      }
+      const data = await getBillingsByPhone(phoneQuery.trim());
+      
+      if (activeTab === "delivery") {
+        // Only show paid/approved bookings for Delivery tab
+        const paid = data.filter((b) => {
+          const status = String(b.status).toUpperCase();
+          return status === "PAYED" || status === "PAID" || status === "APPROVED";
+        });
+        setBillingsByPhone(paid);
+        if (paid.length === 0) {
+          toast.info("Không có hóa đơn đã thanh toán nào cho số này");
+        } else {
+          toast.success(`Đã tìm thấy ${paid.length} hóa đơn đã thanh toán`);
+        }
+      } else {
+        // For Return tab, narrow list to only RENTING invoices of this phone
         const rentingByPhone = data.filter((b) => String(b.status).toUpperCase() === "RENTING");
         setInUseBillings(rentingByPhone);
-      }
-      if (paid.length === 0 && inUseBillings.length === 0) {
-        toast.info("Không có hóa đơn nào cho số này");
-      } else {
-        toast.success(`Đã lọc: ${paid.length} đã thanh toán`);
+        if (rentingByPhone.length === 0) {
+          toast.info("Không có hóa đơn đang thuê nào cho số này");
+        } else {
+          toast.success(`Đã tìm thấy ${rentingByPhone.length} hóa đơn đang thuê`);
+        }
       }
     } catch (err: any) {
       toast.error(err?.message || "Không thể tìm hóa đơn theo SDT");
     } finally {
       setIsSearching(false);
+      if (activeTab === "return") {
+        setLoadingInUse(false);
+      }
     }
   };
 
@@ -302,21 +354,30 @@ const StaffHandoverPage = () => {
       toast.error("Chọn hóa đơn để giao xe");
       return;
     }
-    if (!deliveryFile) {
-      toast.error("Chọn ảnh xe trước khi giao");
+    if (deliveryPhotos.length === 0) {
+      toast.error("Chọn ít nhất một ảnh xe trước khi giao");
       return;
     }
-    console.log("🚗 Giao xe - File ảnh xe:", deliveryFile);
+    console.log("🚗 Giao xe - Số lượng ảnh xe:", deliveryPhotos.length);
     console.log("📋 Billing ID:", selectedBilling.id);
     console.log("📸 File ảnh hợp đồng trước ký:", contractBeforeImage);
     console.log("📸 File ảnh hợp đồng sau ký:", contractAfterImage);
+    console.log("📏 Odometer:", odometerOutKm);
+    console.log("🔋 Battery:", batteryOutPercent);
     try {
+      setIsConfirmingDelivery(true);
       console.log("⏳ Đang check-in với ảnh xe và ảnh hợp đồng...");
+      const odometer = odometerOutKm ? Number(odometerOutKm) : undefined;
+      const battery = batteryOutPercent ? Number(batteryOutPercent) : undefined;
+      // Gửi tất cả các ảnh đã chọn
+      const photoFiles = deliveryPhotos.map((photo) => photo.file);
       const updatedBilling = await checkInByBillingId(
         selectedBilling.id, 
-        deliveryFile,
+        photoFiles,
         contractBeforeImage || undefined,
-        contractAfterImage || undefined
+        contractAfterImage || undefined,
+        odometer,
+        battery
       );
       console.log("✅ Check-in thành công, billing đã cập nhật:", updatedBilling);
       
@@ -340,12 +401,17 @@ const StaffHandoverPage = () => {
       setPreImageUrl("");
       setDeliveryNote("");
       setSelectedBillingId("");
-      clearDeliveryPhoto();
+      setOdometerOutKm("0");
+      setBatteryOutPercent("100");
+      clearDeliveryPhotos();
       clearContractBeforeImage();
       clearContractAfterImage();
     } catch (err: any) {
       console.error(" Lỗi giao xe:", err);
       toast.error(err?.message || "Không thể xác nhận giao xe");
+    }
+    finally {
+      setIsConfirmingDelivery(false);
     }
   };
 
@@ -371,10 +437,24 @@ const StaffHandoverPage = () => {
   };
 
   useEffect(() => {
-    if (activeTab === "return") {
+    if (activeTab === "return" && phoneQuery.trim().length > 0) {
       loadInUseBillings();
+    } else if (activeTab === "return" && phoneQuery.trim().length === 0) {
+      // Reset khi chuyển sang tab return nhưng chưa có số điện thoại
+      setInUseBillings([]);
+      setReturnBillingId("");
+      setOdometerInKm("0");
+      setBatteryInPercent("100");
     }
-  }, [activeTab]);
+  }, [activeTab, phoneQuery]);
+
+  // Reset odometer và battery khi không có billing được chọn (trả xe)
+  useEffect(() => {
+    if (!selectedReturnBilling) {
+      setOdometerInKm("0");
+      setBatteryInPercent("100");
+    }
+  }, [selectedReturnBilling]);
 
   // Load ảnh hợp đồng từ billing khi chọn billing mới
   useEffect(() => {
@@ -394,6 +474,9 @@ const StaffHandoverPage = () => {
           setContractAfterImagePreview("");
         }
       }
+      // Reset odometer và battery về giá trị mặc định
+      setOdometerOutKm("0");
+      setBatteryOutPercent("100");
       return;
     }
 
@@ -417,29 +500,40 @@ const StaffHandoverPage = () => {
       toast.error("Chọn hóa đơn để trả xe");
       return;
     }
-    if (!returnFile) {
-      toast.error("Chọn ảnh xe khi trả");
+    if (returnPhotos.length === 0) {
+      toast.error("Chọn ít nhất một ảnh xe khi trả");
       return;
     }
     const penalty = Number(penaltyCost || 0);
-    console.log(" Trả xe - File ảnh:", returnFile);
+    const odometer = odometerInKm ? Number(odometerInKm) : undefined;
+    const battery = batteryInPercent ? Number(batteryInPercent) : undefined;
+    console.log(" Trả xe - Số lượng ảnh:", returnPhotos.length);
     console.log(" Billing ID:", selectedReturnBilling.id);
     console.log(" Penalty:", penalty);
+    console.log("📏 Odometer khi trả:", odometer);
+    console.log("🔋 Battery khi trả:", battery);
     try {
+      setIsConfirmingReturn(true);
       console.log(" Đang inspect return với ảnh...");
-      await inspectReturnedVehicle(selectedReturnBilling.id, returnFile, penalty, returnNote.trim());
+      const photoFiles = returnPhotos.map((photo) => photo.file);
+      await inspectReturnedVehicle(selectedReturnBilling.id, photoFiles, penalty, returnNote.trim(), odometer, battery);
       toast.success("Trả xe thành công, đã cập nhật hoàn tất!");
       // Reset
       setFinalImageUrl("");
       setPenaltyCost("0");
       setReturnNote("");
       setReturnBillingId("");
-      clearReturnPhoto();
+      setOdometerInKm("0");
+      setBatteryInPercent("100");
+      clearReturnPhotos();
       // Refresh list
       loadInUseBillings();
     } catch (err: any) {
       console.error(" Lỗi trả xe:", err);
       toast.error(err?.message || "Không thể xác nhận trả xe");
+    }
+    finally {
+      setIsConfirmingReturn(false);
     }
   };
 
@@ -483,28 +577,44 @@ const StaffHandoverPage = () => {
                   <CardTitle>Thông tin khách hàng</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {billingsByPhone.length > 0 && (
-                    <div className="space-y-2">
-                      <Label>Chọn hóa đơn (đã thanh toán)</Label>
-                      <Select value={selectedBillingId} onValueChange={setSelectedBillingId}>
-                        <SelectTrigger>
-                          <SelectValue placeholder=" Chọn hóa đơn" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {billingsByPhone.map((b) => (
-                            <SelectItem key={b.id} value={String(b.id)}>
-                              {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                  {phoneQuery.trim().length > 0 ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Chọn hóa đơn (đã thanh toán)</Label>
+                        <Select value={selectedBillingId} onValueChange={setSelectedBillingId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={isSearching ? "Đang tìm..." : billingsByPhone.length === 0 ? "Không có hóa đơn đã thanh toán" : "Chọn hóa đơn"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {billingsByPhone.length === 0 ? (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Không có hóa đơn đã thanh toán
+                              </div>
+                            ) : (
+                              billingsByPhone.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)}>
+                                  {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Nhập số điện thoại và nhấn "Tìm" để tìm hóa đơn đã thanh toán
                     </div>
                   )}
                   {selectedBilling && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label>Khách hàng</Label>
                         <Input readOnly value={selectedBilling.renterName || selectedBilling.renter?.name || ""} />
+                      </div>
+                      <div>
+                        <Label>Trạng thái</Label>
+                        <Input readOnly value={toVietnameseStatus(selectedBilling.status)} />
                       </div>
                       <div>
                         <Label>Thời gian thuê</Label>
@@ -519,10 +629,6 @@ const StaffHandoverPage = () => {
                           }
                         />
                       </div>
-                      <div>
-                        <Label>Trạng thái</Label>
-                        <Input readOnly value={toVietnameseStatus(selectedBilling.status)} />
-                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -534,24 +640,55 @@ const StaffHandoverPage = () => {
                   <CardTitle>Thông tin xe</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Xe</Label>
-                    <Input readOnly value={selectedBilling ? `${selectedBilling.vehicle?.code || ""} - ${selectedBilling.vehicle?.model?.name || selectedBilling.vehicleModel || ""}` : ""} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Biển số</Label>
-                    <Input readOnly value={selectedBilling?.vehicleLicensePlate || ""} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Trạm</Label>
-                    <Input readOnly value={selectedBilling?.vehicle?.station?.name || selectedBilling?.stationName || ""} />
-                  </div>
-                  {selectedBilling?.vehicle?.model?.pricePerDay ? (
-                    <div className="space-y-2">
-                      <Label>Giá/ngày</Label>
-                      <Input readOnly value={String(selectedBilling.vehicle.model.pricePerDay)} />
-                    </div>
-                  ) : null}
+                  {selectedBilling ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Xe</Label>
+                        <Input readOnly value={selectedBilling ? `${selectedBilling.vehicle?.code || ""} - ${selectedBilling.vehicle?.model?.name || selectedBilling.vehicleModel || ""}` : ""} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Biển số</Label>
+                        <Input readOnly value={selectedBilling?.vehicleLicensePlate || ""} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Trạm</Label>
+                        <Input readOnly value={selectedBilling?.vehicle?.station?.name || selectedBilling?.stationName || ""} />
+                      </div>
+                      {selectedBilling?.vehicle?.model?.pricePerDay ? (
+                        <div className="space-y-2">
+                          <Label>Giá/ngày</Label>
+                          <Input readOnly value={String(selectedBilling.vehicle.model.pricePerDay)} />
+                        </div>
+                      ) : null}
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="odometer-out">Số km đồng hồ khi giao (km)</Label>
+                          <Input
+                            id="odometer-out"
+                            type="number"
+                            min="0"
+                            value={odometerOutKm}
+                            onChange={(e) => setOdometerOutKm(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="battery-out">Pin khi giao (%)</Label>
+                          <Input
+                            id="battery-out"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={batteryOutPercent}
+                            onChange={(e) => setBatteryOutPercent(e.target.value)}
+                            placeholder="100"
+                          />
+                        </div>
+                      </>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Nhập số điện thoại và chọn hóa đơn để hiển thị thông tin xe</div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -568,14 +705,14 @@ const StaffHandoverPage = () => {
                   {/* Contract Before Image */}
                   <div className="flex flex-col gap-3">
                     {contractBeforeImagePreview ? (
-                      <div 
+                      <div
                         className="h-40 w-full border rounded-lg overflow-hidden bg-white cursor-pointer hover:bg-accent/50 transition-colors"
                         onClick={() => document.getElementById("contract-before-image-input")?.click()}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={contractBeforeImagePreview} 
-                          alt="Hợp đồng trước ký" 
+                        <img
+                          src={contractBeforeImagePreview}
+                          alt="Hợp đồng trước ký"
                           className="h-full w-full object-contain"
                           onLoad={() => console.log("✅ Ảnh trước ký đã load:", contractBeforeImagePreview)}
                           onError={(e) => console.error("❌ Lỗi load ảnh trước ký:", e, contractBeforeImagePreview)}
@@ -595,11 +732,7 @@ const StaffHandoverPage = () => {
                     )}
                     {contractBeforeImagePreview && (
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearContractBeforeImage}
-                        >
+                        <Button variant="ghost" size="sm" onClick={clearContractBeforeImage}>
                           Xóa
                         </Button>
                       </div>
@@ -616,14 +749,14 @@ const StaffHandoverPage = () => {
                   {/* Contract After Image */}
                   <div className="flex flex-col gap-3">
                     {contractAfterImagePreview ? (
-                      <div 
+                      <div
                         className="h-40 w-full border rounded-lg overflow-hidden bg-white cursor-pointer hover:bg-accent/50 transition-colors"
                         onClick={() => document.getElementById("contract-after-image-input")?.click()}
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img 
-                          src={contractAfterImagePreview} 
-                          alt="Hợp đồng sau ký" 
+                        <img
+                          src={contractAfterImagePreview}
+                          alt="Hợp đồng sau ký"
                           className="h-full w-full object-contain"
                           onLoad={() => console.log("✅ Ảnh sau ký đã load:", contractAfterImagePreview)}
                           onError={(e) => console.error("❌ Lỗi load ảnh sau ký:", e, contractAfterImagePreview)}
@@ -643,11 +776,7 @@ const StaffHandoverPage = () => {
                     )}
                     {contractAfterImagePreview && (
                       <div className="flex gap-2 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={clearContractAfterImage}
-                        >
+                        <Button variant="ghost" size="sm" onClick={clearContractAfterImage}>
                           Xóa
                         </Button>
                       </div>
@@ -670,39 +799,67 @@ const StaffHandoverPage = () => {
                 <CardTitle>Chụp ảnh xe</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col gap-3 max-w-2xl">
-                  <Button
-                    variant="outline"
-                    className="h-64 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
-                    onClick={handlePickDelivery}
-                  >
-                    {deliveryPhoto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={deliveryPhoto} alt="Ảnh xe" className="h-full w-full object-contain" />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full gap-3">
-                        <Camera className="h-10 w-10 text-muted-foreground" />
-                        <span className="text-base font-medium">Chọn ảnh xe</span>
+                <div className="flex flex-col gap-4">
+                  {/* Grid hiển thị các ảnh đã chọn */}
+                  {deliveryPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {deliveryPhotos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square border rounded-lg overflow-hidden bg-gray-100">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.preview}
+                              alt={`Ảnh xe ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                            onClick={() => removeDeliveryPhoto(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Nút thêm ảnh */}
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-32 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                      onClick={handlePickDelivery}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full gap-2">
+                        <Camera className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          {deliveryPhotos.length > 0 ? "Thêm ảnh khác" : "Chọn ảnh xe (có thể chọn nhiều)"}
+                        </span>
+                      </div>
+                    </Button>
+                    {deliveryPhotos.length > 0 && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearDeliveryPhotos}
+                        >
+                          Xóa tất cả
+                        </Button>
                       </div>
                     )}
-                  </Button>
-                  <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={!deliveryPhoto}
-                      onClick={clearDeliveryPhoto}
-                    >
-                      Xóa
-                    </Button>
+                    <input
+                      id="delivery-photo-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => onDeliveryFileChange(e.target.files)}
+                    />
                   </div>
-                  <input
-                    id="delivery-photo-input"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => onDeliveryFileChange(e.target.files?.[0])}
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -724,9 +881,22 @@ const StaffHandoverPage = () => {
             {/* Hành động */}
             <div className="flex gap-4 justify-end">
               <Button variant="outline">Hủy</Button>
-              <Button onClick={handleConfirmDelivery}>
-                <Check className="h-4 w-4 mr-2" />
-                Xác nhận giao xe
+              <Button
+                onClick={handleConfirmDelivery}
+                disabled={isConfirmingDelivery}
+                className="transform transition-transform duration-150 active:scale-95"
+              >
+                {isConfirmingDelivery ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Đang xác nhận...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Xác nhận giao xe
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>
@@ -739,20 +909,26 @@ const StaffHandoverPage = () => {
                   <CardTitle>Thông tin khách hàng</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  {phoneQuery.trim().length > 0 && (
+                  {phoneQuery.trim().length > 0 ? (
                     <div className="flex items-end gap-2">
                       <div className="flex-1 space-y-2">
                         <Label>Chọn hóa đơn đang thuê</Label>
                         <Select value={returnBillingId} onValueChange={setReturnBillingId}>
                           <SelectTrigger>
-                            <SelectValue placeholder={loadingInUse ? "Đang tải..." : "Chọn hóa đơn"} />
+                            <SelectValue placeholder={loadingInUse ? "Đang tải..." : inUseBillings.length === 0 ? "Không có hóa đơn đang thuê" : "Chọn hóa đơn"} />
                           </SelectTrigger>
                           <SelectContent>
-                            {inUseBillings.map((b) => (
-                              <SelectItem key={b.id} value={String(b.id)}>
-                                {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
-                              </SelectItem>
-                            ))}
+                            {inUseBillings.length === 0 ? (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground">
+                                Không có hóa đơn đang thuê
+                              </div>
+                            ) : (
+                              inUseBillings.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)}>
+                                  {`#${b.id} • ${b.vehicle?.code || b.vehicleModel || "Xe"} • ${b.vehicleLicensePlate || "-"} • ${formatBillingPeriod(b)}`}
+                                </SelectItem>
+                              ))
+                            )}
                           </SelectContent>
                         </Select>
                       </div>
@@ -760,12 +936,20 @@ const StaffHandoverPage = () => {
                         {loadingInUse ? "Đang tải" : "Làm mới"}
                       </Button>
                     </div>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">
+                      Nhập số điện thoại và nhấn "Tìm" để tìm hóa đơn đang thuê
+                    </div>
                   )}
                   {selectedReturnBilling && (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       <div>
                         <Label>Khách hàng</Label>
                         <Input readOnly value={selectedReturnBilling.renterName || selectedReturnBilling.renter?.name || ""} />
+                      </div>
+                      <div>
+                        <Label>Trạng thái</Label>
+                        <Input readOnly value={toVietnameseStatus(selectedReturnBilling.status)} />
                       </div>
                       <div>
                         <Label>Thời gian thuê</Label>
@@ -780,10 +964,6 @@ const StaffHandoverPage = () => {
                           }
                         />
                       </div>
-                      <div>
-                        <Label>Trạng thái</Label>
-                        <Input readOnly value={toVietnameseStatus(selectedReturnBilling.status)} />
-                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -795,24 +975,55 @@ const StaffHandoverPage = () => {
                   <CardTitle>Thông tin xe</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Xe</Label>
-                    <Input readOnly value={selectedReturnBilling ? `${selectedReturnBilling.vehicle?.code || ""} - ${selectedReturnBilling.vehicle?.model?.name || selectedReturnBilling.vehicleModel || ""}` : ""} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Biển số</Label>
-                    <Input readOnly value={selectedReturnBilling?.vehicleLicensePlate || ""} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Trạm</Label>
-                    <Input readOnly value={selectedReturnBilling?.vehicle?.station?.name || selectedReturnBilling?.stationName || ""} />
-                  </div>
-                  {selectedReturnBilling?.vehicle?.model?.pricePerDay ? (
-                    <div className="space-y-2">
-                      <Label>Giá/ngày</Label>
-                      <Input readOnly value={String(selectedReturnBilling.vehicle.model.pricePerDay)} />
-                    </div>
-                  ) : null}
+                  {selectedReturnBilling ? (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Xe</Label>
+                        <Input readOnly value={`${selectedReturnBilling.vehicle?.code || ""} - ${selectedReturnBilling.vehicle?.model?.name || selectedReturnBilling.vehicleModel || ""}`} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Biển số</Label>
+                        <Input readOnly value={selectedReturnBilling?.vehicleLicensePlate || ""} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Trạm</Label>
+                        <Input readOnly value={selectedReturnBilling?.vehicle?.station?.name || selectedReturnBilling?.stationName || ""} />
+                      </div>
+                      {selectedReturnBilling?.vehicle?.model?.pricePerDay ? (
+                        <div className="space-y-2">
+                          <Label>Giá/ngày</Label>
+                          <Input readOnly value={String(selectedReturnBilling.vehicle.model.pricePerDay)} />
+                        </div>
+                      ) : null}
+                      <>
+                        <div className="space-y-2">
+                          <Label htmlFor="odometer-in">Số km đồng hồ khi trả (km)</Label>
+                          <Input
+                            id="odometer-in"
+                            type="number"
+                            min="0"
+                            value={odometerInKm}
+                            onChange={(e) => setOdometerInKm(e.target.value)}
+                            placeholder="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="battery-in">Pin khi trả (%)</Label>
+                          <Input
+                            id="battery-in"
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={batteryInPercent}
+                            onChange={(e) => setBatteryInPercent(e.target.value)}
+                            placeholder="100"
+                          />
+                        </div>
+                      </>
+                    </>
+                  ) : (
+                    <div className="text-sm text-muted-foreground">Nhập số điện thoại và chọn hóa đơn để hiển thị thông tin xe</div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -823,39 +1034,67 @@ const StaffHandoverPage = () => {
                 <CardTitle>Chụp ảnh xe khi trả</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="flex flex-col gap-3 max-w-2xl">
-                  <Button
-                    variant="outline"
-                    className="h-64 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
-                    onClick={handlePickReturn}
-                  >
-                    {returnPhoto ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={returnPhoto} alt="Ảnh xe khi trả" className="h-full w-full object-contain" />
-                    ) : (
-                      <div className="flex flex-col items-center justify-center h-full gap-3">
-                        <Camera className="h-10 w-10 text-muted-foreground" />
-                        <span className="text-base font-medium">Chọn ảnh xe</span>
+                <div className="flex flex-col gap-4">
+                  {/* Grid hiển thị các ảnh đã chọn */}
+                  {returnPhotos.length > 0 && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {returnPhotos.map((photo, index) => (
+                        <div key={index} className="relative group">
+                          <div className="aspect-square border rounded-lg overflow-hidden bg-gray-100">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={photo.preview}
+                              alt={`Ảnh xe khi trả ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                            onClick={() => removeReturnPhoto(index)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {/* Nút thêm ảnh */}
+                  <div className="flex flex-col gap-2">
+                    <Button
+                      variant="outline"
+                      className="h-32 w-full flex flex-col gap-2 p-0 overflow-hidden hover:bg-accent/50 transition-colors"
+                      onClick={handlePickReturn}
+                    >
+                      <div className="flex flex-col items-center justify-center h-full gap-2">
+                        <Camera className="h-8 w-8 text-muted-foreground" />
+                        <span className="text-sm font-medium">
+                          {returnPhotos.length > 0 ? "Thêm ảnh khác" : "Chọn ảnh xe khi trả (có thể chọn nhiều)"}
+                        </span>
+                      </div>
+                    </Button>
+                    {returnPhotos.length > 0 && (
+                      <div className="flex justify-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearReturnPhotos}
+                        >
+                          Xóa tất cả
+                        </Button>
                       </div>
                     )}
-                  </Button>
-                  <div className="flex justify-end">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={!returnPhoto}
-                      onClick={clearReturnPhoto}
-                    >
-                      Xóa
-                    </Button>
+                    <input
+                      id="return-photo-input"
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={(e) => onReturnFileChange(e.target.files)}
+                    />
                   </div>
-                  <input
-                    id="return-photo-input"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => onReturnFileChange(e.target.files?.[0])}
-                  />
                 </div>
               </CardContent>
             </Card>
@@ -888,9 +1127,22 @@ const StaffHandoverPage = () => {
             {/* Actions */}
             <div className="flex gap-4 justify-end">
               <Button variant="outline">Hủy</Button>
-              <Button onClick={handleConfirmReturn}>
-                <Check className="h-4 w-4 mr-2" />
-                Xác nhận trả xe
+              <Button
+                onClick={handleConfirmReturn}
+                disabled={isConfirmingReturn}
+                className="transform transition-transform duration-150 active:scale-95"
+              >
+                {isConfirmingReturn ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Đang xác nhận...
+                  </>
+                ) : (
+                  <>
+                    <Check className="h-4 w-4 mr-2" />
+                    Xác nhận trả xe
+                  </>
+                )}
               </Button>
             </div>
           </TabsContent>

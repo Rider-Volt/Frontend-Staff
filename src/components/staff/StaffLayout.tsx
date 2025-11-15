@@ -12,7 +12,9 @@ import {
   Calendar,
   LogOut,
   User,
-  Users
+  Users,
+  ShieldCheck,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -30,6 +32,8 @@ const navigation = [
   // { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
   { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
   { name: 'Quản lý khách hàng', href: '/accounts', icon: Users },
+  { name: 'Xác minh danh tính', href: '/identity-verification', icon: ShieldCheck },
+  { name: 'Quản lý báo cáo', href: '/reports', icon: FileText },
 ];
 
 const Sidebar = () => {

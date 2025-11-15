@@ -359,18 +359,29 @@ export async function cancelBilling(id: number): Promise<BillingResponse> {
   return updateBillingStatus(id, "CANCELLED");
 }
 
-// Kiểm tra xe trả về (multipart/form-data)
+// Kiểm tra xe trả về (multipart/form-data) - hỗ trợ nhiều ảnh
 export async function inspectReturnedVehicle(
   id: number, 
-  finalImageFile: File, 
+  finalImageFiles: File | File[], 
   penaltyCost: number, 
-  note: string
+  note: string,
+  odometerInKm?: number,
+  batteryInPercent?: number
 ): Promise<BillingResponse> {
   const form = new FormData();
-  form.append("finalImage", finalImageFile);
+  const files = Array.isArray(finalImageFiles) ? finalImageFiles : [finalImageFiles];
+  files.forEach((file) => {
+    form.append("finalImages", file);
+  });
   form.append("penaltyCost", String(penaltyCost));
   if (note.trim()) {
     form.append("note", note.trim());
+  }
+  if (odometerInKm !== undefined && odometerInKm !== null) {
+    form.append("odometerInKm", String(odometerInKm));
+  }
+  if (batteryInPercent !== undefined && batteryInPercent !== null) {
+    form.append("batteryInPercent", String(batteryInPercent));
   }
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/inspect-return`, {
     method: "POST",
@@ -389,22 +400,33 @@ export async function inspectReturnedVehicle(
   return (await resp.json()) as BillingResponse;
 }
 
-// Check-in bằng billing ID (có thể kèm preImage và ảnh hợp đồng)
+// Check-in bằng billing ID (có thể kèm preImages và ảnh hợp đồng)
 export async function checkInByBillingId(
   id: number, 
-  preImageFile?: File,
+  preImageFiles?: File | File[],
   contractBeforeImageFile?: File,
-  contractAfterImageFile?: File
+  contractAfterImageFile?: File,
+  odometerOutKm?: number,
+  batteryOutPercent?: number
 ): Promise<BillingResponse> {
   const form = new FormData();
-  if (preImageFile) {
-    form.append("preImage", preImageFile);
+  if (preImageFiles) {
+    const files = Array.isArray(preImageFiles) ? preImageFiles : [preImageFiles];
+    files.forEach((file) => {
+      form.append("preImages", file);
+    });
   }
   if (contractBeforeImageFile) {
     form.append("contractBeforeImage", contractBeforeImageFile);
   }
   if (contractAfterImageFile) {
     form.append("contractAfterImage", contractAfterImageFile);
+  }
+  if (odometerOutKm !== undefined && odometerOutKm !== null) {
+    form.append("odometerOutKm", String(odometerOutKm));
+  }
+  if (batteryOutPercent !== undefined && batteryOutPercent !== null) {
+    form.append("batteryOutPercent", String(batteryOutPercent));
   }
   const resp = await fetch(`${API_BASE}/staff/billings/${id}/check-in`, {
     method: "POST",
