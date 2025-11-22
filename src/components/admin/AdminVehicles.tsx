@@ -38,7 +38,8 @@ import {
   Wrench,
   Loader2,
   AlertCircle,
-  Pin
+  Pin,
+  Gauge
 } from 'lucide-react';
 import { 
   getAllVehicles, 
@@ -200,9 +201,9 @@ const AdminVehicles = () => {
 
   // Thêm xe mới
   const handleAddVehicle = async () => {
-    // Validation - Kiểm tra dữ liệu đầu vào
+  
     if (!newVehicle.code.trim()) {
-      alert('Vui lòng nhập biển sốsố xe!');
+      alert('Vui lòng nhập biển số xe!');
       return;
     }
     if (newVehicle.modelId <= 0) {
@@ -358,6 +359,7 @@ const AdminVehicles = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Nút bấm: Thêm Xe Mới - Mở dialog form thêm xe mới vào hệ thống */}
           <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-green-600 hover:bg-green-700">
@@ -449,9 +451,11 @@ const AdminVehicles = () => {
               </div>
               {/* Bỏ các trường Giá/ngày và URL Ảnh theo yêu cầu */}
               <div className="flex justify-end space-x-2">
+                {/* Nút bấm: Hủy - Đóng dialog thêm xe, không lưu thay đổi */}
                 <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                   Hủy
                 </Button>
+                {/* Nút bấm: Thêm Xe - Gửi form thêm xe mới, gọi API createVehicle */}
                 <Button onClick={handleAddVehicle}>
                   Thêm Xe
                 </Button>
@@ -519,6 +523,22 @@ const AdminVehicles = () => {
                     <p className="text-sm">{viewingVehicle.pricePerDay ? `${viewingVehicle.pricePerDay.toLocaleString()} VNĐ` : 'Chưa có'}</p>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Pin (%)</label>
+                    <p className="text-sm flex items-center gap-1.5">
+                      <Pin className="h-4 w-4 text-gray-500" />
+                      {viewingVehicle.currentPin ?? 'N/A'}%
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Km</label>
+                    <p className="text-sm flex items-center gap-1.5">
+                      <Gauge className="h-4 w-4 text-gray-500" />
+                      {viewingVehicle.currentKm?.toLocaleString() ?? 'N/A'} km
+                    </p>
+                  </div>
+                </div>
                 <div>
                   <label className="text-sm font-medium text-gray-500">Trạm</label>
                   <p className="text-sm">{viewingVehicle.stationName || 'Chưa gán trạm'}</p>
@@ -530,6 +550,7 @@ const AdminVehicles = () => {
                   </div>
                 )}
                 <div className="flex justify-end">
+                  {/* Nút bấm: Đóng - Đóng dialog xem chi tiết xe */}
                   <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
                     Đóng
                   </Button>
@@ -571,7 +592,7 @@ const AdminVehicles = () => {
                    />
                    <p className="text-xs text-gray-500 mt-1">Mã xe (biển số)</p>
                  </div>
-                {/* Model đã bỏ khỏi form chỉnh sửa theo yêu cầu BE */}
+                
                 <div>
                   <label className="text-sm font-medium">Trạm <span className="text-red-500">*</span></label>
                   <Select 
@@ -609,9 +630,11 @@ const AdminVehicles = () => {
                   <p className="text-xs text-gray-500 mt-1">Pin level từ 0 đến 100%</p>
                 </div>
                 <div className="flex justify-end space-x-2">
+                  {/* Nút bấm: Hủy - Đóng dialog chỉnh sửa xe, không lưu thay đổi */}
                   <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                     Hủy
                   </Button>
+                  {/* Nút bấm: Cập nhật - Gửi form cập nhật thông tin xe, gọi API updateVehicle */}
                   <Button onClick={handleUpdateVehicle}>
                     Cập nhật
                   </Button>
@@ -631,10 +654,12 @@ const AdminVehicles = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Ảnh</TableHead>
+                <TableHead>Mã xe</TableHead>
                 <TableHead>Model</TableHead>
                 <TableHead>Loại Xe</TableHead>
                 <TableHead>Biển Số</TableHead>
                 <TableHead>Pin (%)</TableHead>
+                <TableHead>Km</TableHead>
                 <TableHead>Trạm</TableHead>
                 <TableHead>Giá/ngày</TableHead>
                 <TableHead>Trạng Thái</TableHead>
@@ -644,7 +669,7 @@ const AdminVehicles = () => {
             <TableBody>
               {filteredVehicles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={11} className="text-center py-8 text-gray-500">
                     Không có xe nào
                   </TableCell>
                 </TableRow>
@@ -662,6 +687,7 @@ const AdminVehicles = () => {
                           />
                         )}
                       </TableCell>
+                      <TableCell className="font-semibold text-black">#{vehicle.vehicleId}</TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {vehicle.model || 'Chưa có model'}
                       </TableCell>
@@ -673,6 +699,12 @@ const AdminVehicles = () => {
                         <div className="flex items-center gap-1.5">
                           <Pin className="h-4 w-4 text-gray-500" />
                           <span className="font-medium">{vehicle.currentPin ?? 'N/A'}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5">
+                          <Gauge className="h-4 w-4 text-gray-500" />
+                          <span className="font-medium">{vehicle.currentKm?.toLocaleString() ?? 'N/A'} km</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-sm">
@@ -687,13 +719,16 @@ const AdminVehicles = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
+                        {/* Menu dropdown chứa các hành động cho từng xe */}
                         <DropdownMenu>
+                          {/* Nút bấm: Menu hành động - Mở dropdown menu với các tùy chọn: Xem, Sửa, Xóa */}
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                          {/* Nút bấm: Xem chi tiết - Mở dialog hiển thị thông tin chi tiết của xe (chỉ đọc) */}
                           <DropdownMenuItem onSelect={() => {
                               setViewingVehicle(vehicle);
                               setIsViewDialogOpen(true);
@@ -701,6 +736,7 @@ const AdminVehicles = () => {
                               <Eye className="mr-2 h-4 w-4" />
                               Xem chi tiết
                             </DropdownMenuItem>
+                          {/* Nút bấm: Chỉnh sửa - Mở dialog form chỉnh sửa thông tin xe */}
                           <DropdownMenuItem onSelect={() => {
                               setEditingVehicle(vehicle);
                               setIsEditDialogOpen(true);
@@ -708,6 +744,7 @@ const AdminVehicles = () => {
                               <Edit className="mr-2 h-4 w-4" />
                               Chỉnh sửa
                             </DropdownMenuItem>
+                          {/* Nút bấm: Xóa - Xóa xe khỏi hệ thống, gọi API deleteVehicle (có xác nhận) */}
                           <DropdownMenuItem 
                               onSelect={() => handleDeleteVehicle(vehicle.vehicleId)}
                               className="text-red-600"

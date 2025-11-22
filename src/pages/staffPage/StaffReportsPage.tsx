@@ -606,7 +606,7 @@ const StaffReportsPage = () => {
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => openStatusUpdateDialog(report)}
                               disabled={getAllowedStatuses(report.status).length === 0}
@@ -616,8 +616,7 @@ const StaffReportsPage = () => {
                                   : "Cập nhật trạng thái"
                               }
                             >
-                              <Filter className="h-4 w-4 mr-1" />
-                              Đổi trạng thái
+                              <Filter className="h-4 w-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -738,12 +737,7 @@ const StaffReportsPage = () => {
                   rows={3}
                 />
               </div>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                <p className="text-sm text-blue-800">
-                  <strong>Lưu ý:</strong> Báo cáo mới sẽ tự động được tạo với trạng thái <strong>"Bản nháp"</strong>. 
-                  Trạm sẽ được tự động xác định từ tài khoản nhân viên của bạn.
-                </p>
-              </div>
+              
             </div>
             <DialogFooter>
               <Button
@@ -1090,7 +1084,7 @@ const StaffReportsPage = () => {
                 </Select>
                 {selectedReport && (
                   <p className="text-xs text-muted-foreground">
-                    Chỉ có thể chuyển: DRAFT → FINALIZED, FINALIZED → ARCHIVED
+                    
                   </p>
                 )}
               </div>

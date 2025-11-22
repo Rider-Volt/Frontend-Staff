@@ -4,10 +4,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, RefreshCw, Mail, Phone, ShieldCheck, ShieldAlert, User, FileText, Eye } from 'lucide-react';
+import { Search, RefreshCw, Mail, Phone, ShieldCheck, ShieldAlert, User } from 'lucide-react';
 import { getRenters, updateRenterStatus, type RenterAccount, type StaffAccountStatus } from '@/services/staffservice/staffAccountService';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const StaffRenterManagement: React.FC = () => {
   const [renters, setRenters] = useState<RenterAccount[]>([]);
@@ -15,7 +14,6 @@ const StaffRenterManagement: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [imageErrors, setImageErrors] = useState<Set<number>>(new Set());
-  const [viewingDocuments, setViewingDocuments] = useState<RenterAccount | null>(null);
 
   const load = async () => {
     try {
@@ -91,7 +89,6 @@ const StaffRenterManagement: React.FC = () => {
                   <TableHead>Họ tên</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Số ĐT</TableHead>
-                  <TableHead>Giấy tờ</TableHead>
                   <TableHead>Rủi ro</TableHead>
                   <TableHead>Trạng thái</TableHead>
                   <TableHead className="text-right">Cập nhật</TableHead>
@@ -124,22 +121,6 @@ const StaffRenterManagement: React.FC = () => {
                     <TableCell>
                       <div className="flex items-center gap-2"><Phone className="h-3 w-3 text-gray-400" /><span>{r.phone}</span></div>
                     </TableCell>
-                    
-                    <TableCell>
-                      {(r.cccdUrl || r.gplxUrl) ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setViewingDocuments(r)}
-                          className="h-8"
-                        >
-                          <Eye className="h-3 w-3 mr-1" />
-                          Xem
-                        </Button>
-                      ) : (
-                        <span className="text-gray-400 text-xs">-</span>
-                      )}
-                    </TableCell>
                     <TableCell className="font-medium">{r.riskScore ?? 0}</TableCell>
                     <TableCell>{statusBadge(r.status)}</TableCell>
                     <TableCell className="text-right">
@@ -164,7 +145,7 @@ const StaffRenterManagement: React.FC = () => {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">Không có khách hàng</TableCell>
+                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">Không có khách hàng</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -172,81 +153,6 @@ const StaffRenterManagement: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Dialog hiển thị giấy tờ */}
-      <Dialog open={!!viewingDocuments} onOpenChange={(open) => !open && setViewingDocuments(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Giấy tờ - {viewingDocuments?.name}</DialogTitle>
-            <DialogDescription>
-              CCCD và Giấy phép lái xe của khách hàng
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-6 mt-4">
-            {viewingDocuments?.cccdUrl ? (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Căn cước công dân (CCCD)</h3>
-                <div className="border rounded-lg p-2 bg-gray-50">
-                  <img 
-                    src={viewingDocuments.cccdUrl} 
-                    alt="CCCD" 
-                    className="w-full h-auto rounded"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '';
-                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<p class="text-red-500 p-4">Không thể tải ảnh CCCD</p>';
-                    }}
-                  />
-                </div>
-                <a 
-                  href={viewingDocuments.cccdUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm"
-                >
-                  <FileText className="h-4 w-4" />
-                  Mở trong tab mới
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Căn cước công dân (CCCD)</h3>
-                <p className="text-gray-500">Chưa có CCCD</p>
-              </div>
-            )}
-
-            {viewingDocuments?.gplxUrl ? (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Giấy phép lái xe (GPLX)</h3>
-                <div className="border rounded-lg p-2 bg-gray-50">
-                  <img 
-                    src={viewingDocuments.gplxUrl} 
-                    alt="GPLX" 
-                    className="w-full h-auto rounded"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '';
-                      (e.target as HTMLImageElement).parentElement!.innerHTML = '<p class="text-red-500 p-4">Không thể tải ảnh GPLX</p>';
-                    }}
-                  />
-                </div>
-                <a 
-                  href={viewingDocuments.gplxUrl} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-green-600 hover:text-green-800 text-sm"
-                >
-                  <FileText className="h-4 w-4" />
-                  Mở trong tab mới
-                </a>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <h3 className="font-semibold text-lg">Giấy phép lái xe (GPLX)</h3>
-                <p className="text-gray-500">Chưa có GPLX</p>
-              </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

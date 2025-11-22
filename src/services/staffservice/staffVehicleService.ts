@@ -15,10 +15,16 @@ export interface StaffVehicle {
   stationLatitude?: number;
   stationLongitude?: number;
   currentPin: number;
+  currentKm: number;
 }
 
 export interface UpdateVehicleStatusRequest {
   status: string;
+}
+
+export interface UpdateVehicleTelemetryRequest {
+  currentKm: number;
+  currentPin: number;
 }
 
 function authHeaders(): HeadersInit {
@@ -127,6 +133,65 @@ export async function updateVehicleStatus(vehicleId: number, status: string): Pr
   const updated = await resp.json();
   console.log('Staff updated vehicle response:', updated);
   
+  return updated as StaffVehicle;
+}
+
+// Cập nhật telemetry xe (odometer & battery)
+export async function updateVehicleTelemetry(
+  vehicleId: number, 
+  currentKm: number, 
+  currentPin: number
+): Promise<StaffVehicle> {
+  // Validate inputs
+  if (currentKm < 0) {
+    throw new Error("Số km không được âm.");
+  }
+  if (currentPin < 0 || currentPin > 100) {
+    throw new Error("Pin phải từ 0 đến 100%.");
+  }
+
+  const updateData: UpdateVehicleTelemetryRequest = {
+    currentKm: Math.round(currentKm),
+    currentPin: Math.round(currentPin)
+  };
+
+  console.log('Staff updating vehicle telemetry - ID:', vehicleId);
+  console.log('Staff telemetry data:', JSON.stringify(updateData, null, 2));
+  console.log('Staff request URL:', `${API_BASE}/staff/vehicles/${vehicleId}/telemetry`);
+
+  const resp = await fetch(`${API_BASE}/staff/vehicles/${vehicleId}/telemetry`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(updateData),
+  });
+
+  console.log('Staff telemetry update response status:', resp.status);
+
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền cập nhật telemetry xe này.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy xe để cập nhật.");
+    }
+    
+    let errorMessage = 'Failed to update vehicle telemetry';
+    try {
+      const errorData = await resp.json();
+      console.error('Staff telemetry error response:', errorData);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch {
+      const text = await resp.text().catch(() => resp.statusText);
+      console.error('Staff failed to update vehicle telemetry:', text);
+      errorMessage = text || errorMessage;
+    }
+    
+    throw new Error(errorMessage);
+  }
+
+  const updated = await resp.json();
+  console.log('Staff updated vehicle telemetry response:', updated);
+
   return updated as StaffVehicle;
 }
 

@@ -15,6 +15,7 @@ export interface Vehicle {
   stationLatitude: number;
   stationLongitude: number;
   currentPin: number;
+  currentKm: number;
 }
 
 export interface CreateVehicleRequest {

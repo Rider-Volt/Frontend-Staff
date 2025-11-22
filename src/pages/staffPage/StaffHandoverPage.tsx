@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Camera, Check, X, Loader2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -17,6 +18,7 @@ import {
   inspectReturnedVehicle,
   uploadContractBeforeImage,
   uploadContractAfterImage,
+  markBillingRisk,
   type BillingResponse,
 } from "@/services/staffservice/staffBillingService";
 import {
@@ -107,6 +109,10 @@ const StaffHandoverPage = () => {
   const [odometerInKm, setOdometerInKm] = useState<string>("0");
   const [batteryInPercent, setBatteryInPercent] = useState<string>("100");
   const [isConfirmingReturn, setIsConfirmingReturn] = useState(false);
+  const [isMarkingRisk, setIsMarkingRisk] = useState(false);
+  const [riskLate, setRiskLate] = useState(false);
+  const [riskMinorDamage, setRiskMinorDamage] = useState(false);
+  const [riskMajorDamage, setRiskMajorDamage] = useState(false);
 
   // Xem trước ảnh đã chọn từ thư viện (trả xe) - hỗ trợ nhiều ảnh
   const [returnPhotos, setReturnPhotos] = useState<Array<{ file: File; preview: string }>>([]);
@@ -445,16 +451,28 @@ const StaffHandoverPage = () => {
       setReturnBillingId("");
       setOdometerInKm("0");
       setBatteryInPercent("100");
+      // Reset risk checkboxes
+      setRiskLate(false);
+      setRiskMinorDamage(false);
+      setRiskMajorDamage(false);
     }
   }, [activeTab, phoneQuery]);
 
-  // Reset odometer và battery khi không có billing được chọn (trả xe)
+  // Reset odometer, battery và risk checkboxes khi không có billing được chọn hoặc chọn billing khác (trả xe)
   useEffect(() => {
     if (!selectedReturnBilling) {
       setOdometerInKm("0");
       setBatteryInPercent("100");
+      setRiskLate(false);
+      setRiskMinorDamage(false);
+      setRiskMajorDamage(false);
+    } else {
+      // Reset risk checkboxes khi chọn billing mới (để tránh giữ lại giá trị cũ)
+      setRiskLate(false);
+      setRiskMinorDamage(false);
+      setRiskMajorDamage(false);
     }
-  }, [selectedReturnBilling]);
+  }, [selectedReturnBilling?.id]);
 
   // Load ảnh hợp đồng từ billing khi chọn billing mới
   useEffect(() => {
@@ -1123,6 +1141,107 @@ const StaffHandoverPage = () => {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Quản lý Risk */}
+            {selectedReturnBilling && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quản lý Risk</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="space-y-3">
+                      <Label className="text-base font-semibold">Đánh dấu các vấn đề:</Label>
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="risk-late"
+                            checked={riskLate}
+                            onCheckedChange={(checked) => setRiskLate(checked === true)}
+                          />
+                          <Label
+                            htmlFor="risk-late"
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            Trả xe muộn
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="risk-minor-damage"
+                            checked={riskMinorDamage}
+                            onCheckedChange={(checked) => setRiskMinorDamage(checked === true)}
+                          />
+                          <Label
+                            htmlFor="risk-minor-damage"
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            Hư hỏng nhỏ
+                          </Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="risk-major-damage"
+                            checked={riskMajorDamage}
+                            onCheckedChange={(checked) => setRiskMajorDamage(checked === true)}
+                          />
+                          <Label
+                            htmlFor="risk-major-damage"
+                            className="text-sm font-normal cursor-pointer"
+                          >
+                            Hư hỏng lớn
+                          </Label>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 pt-2">
+                      <Button
+                        variant="destructive"
+                        onClick={async () => {
+                          if (!selectedReturnBilling) {
+                            toast.error("Chọn hóa đơn trước");
+                            return;
+                          }
+                          if (!riskLate && !riskMinorDamage && !riskMajorDamage) {
+                            toast.error("Vui lòng chọn ít nhất một vấn đề để đánh dấu risk");
+                            return;
+                          }
+                          try {
+                            setIsMarkingRisk(true);
+                            await markBillingRisk(selectedReturnBilling.id, {
+                              late: riskLate,
+                              minorDamage: riskMinorDamage,
+                              majorDamage: riskMajorDamage,
+                            });
+                            toast.success("Đã đánh dấu risk cho hóa đơn");
+                            // Refresh danh sách
+                            loadInUseBillings();
+                            // Reset checkboxes
+                            setRiskLate(false);
+                            setRiskMinorDamage(false);
+                            setRiskMajorDamage(false);
+                          } catch (err: any) {
+                            toast.error(err?.message || "Không thể đánh dấu risk");
+                          } finally {
+                            setIsMarkingRisk(false);
+                          }
+                        }}
+                        disabled={isMarkingRisk}
+                      >
+                        {isMarkingRisk ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Đang xử lý...
+                          </>
+                        ) : (
+                          "Đánh dấu Risk"
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Actions */}
             <div className="flex gap-4 justify-end">

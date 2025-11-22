@@ -423,16 +423,6 @@ const AdminEmployees = () => {
                               onClick={(event) => event.stopPropagation()}
                             >
                               <DropdownMenuItem
-                                onSelect={() => {
-                                  setSelectedStaff(item);
-                                  setTransferDialogOpen(true);
-                                }}
-                                disabled={transferOptions.length === 0}
-                              >
-                                <ArrowLeftRight className="mr-2 h-4 w-4 text-green-600" />
-                                Chuyển điểm thuê
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
                                 onSelect={() => handleEndAssignment(item)}
                               >
                                 <XCircle className="mr-2 h-4 w-4 text-red-600" />
@@ -456,11 +446,7 @@ const AdminEmployees = () => {
         onOpenChange={setAssignDialogOpen}
         onAssign={handleAssignStaff}
         loading={actionLoading}
-        stationName={
-          selectedStationId !== null
-            ? stations.find((station) => station.id === selectedStationId)?.name
-            : undefined
-        }
+        stationName={stations.find((s) => s.id === selectedStationId)?.name}
       />
 
       <TransferStaffDialog

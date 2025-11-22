@@ -513,3 +513,50 @@ export async function approveCustomerPayment(id: number): Promise<BillingRespons
 
 // Check-in bằng số điện thoại người thuê
 // (Không hỗ trợ check-in theo số điện thoại trong spec BE hiện tại)
+
+// Đánh dấu risk cho billing
+export async function markBillingRisk(
+  billingId: number,
+  riskData: {
+    late?: boolean;
+    minorDamage?: boolean;
+    majorDamage?: boolean;
+  }
+): Promise<BillingResponse> {
+  const resp = await fetch(`${API_BASE}/staff/billings/${billingId}/risk`, {
+    method: "PATCH",
+    headers: {
+      ...authHeaders(),
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      late: riskData.late || false,
+      minorDamage: riskData.minorDamage || false,
+      majorDamage: riskData.majorDamage || false,
+    }),
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền đánh dấu risk.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to mark billing risk (${resp.status})`);
+  }
+  return (await resp.json()) as BillingResponse;
+}
+
+// Xóa risk cho billing
+export async function cleanBillingRisk(billingId: number): Promise<BillingResponse> {
+  const resp = await fetch(`${API_BASE}/staff/billings/${billingId}/risk/clean`, {
+    method: "PATCH",
+    headers: { ...authHeaders() },
+  });
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền xóa risk.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to clean billing risk (${resp.status})`);
+  }
+  return (await resp.json()) as BillingResponse;
+}

@@ -1,5 +1,24 @@
 const API_BASE = "https://backend.ridervolt.app/api";
 
+export type ReportStatus = "DRAFT" | "FINALIZED" | "ARCHIVED";
+
+export interface ReportResponse {
+  id: number;
+  stationId: number;
+  stationName: string;
+  periodStart: string; // ISO date string
+  periodEnd: string; // ISO date string
+  totalTrips: number;
+  successfulTrips: number;
+  canceledTrips: number;
+  totalRevenue: number;
+  avgRating: number;
+  note: string;
+  status: ReportStatus;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface PeakHourAnalysis {
   peakHours: string[];
   lowDemandHours: string[];
@@ -114,5 +133,77 @@ export async function getAIForecastDemand(): Promise<AIForecast> {
   }
   
   return (await resp.json()) as AIForecast;
+}
+
+// ===== API /admin/analytics/* endpoints =====
+
+// GET /api/admin/analytics/station/{stationId} - Get all non-draft reports for a specific station
+export async function getStationReports(stationId: number): Promise<ReportResponse[]> {
+  const resp = await fetch(`${API_BASE}/admin/analytics/station/${stationId}`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+  
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền xem báo cáo của trạm này.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy trạm.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to load station reports (${resp.status})`);
+  }
+  
+  return (await resp.json()) as ReportResponse[];
+}
+
+// GET /api/admin/analytics/station/{stationId}/status/{status} - Get reports by station and status
+export async function getStationReportsByStatus(
+  stationId: number,
+  status: "FINALIZED" | "ARCHIVED"
+): Promise<ReportResponse[]> {
+  const resp = await fetch(`${API_BASE}/admin/analytics/station/${stationId}/status/${status}`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+  
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền xem báo cáo theo trạng thái.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy trạm hoặc báo cáo.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to load reports by status (${resp.status})`);
+  }
+  
+  return (await resp.json()) as ReportResponse[];
+}
+
+// PATCH /api/admin/analytics/{reportId}/archive - Archive a finalized report
+export async function archiveReport(reportId: number): Promise<ReportResponse> {
+  const resp = await fetch(`${API_BASE}/admin/analytics/${reportId}/archive`, {
+    method: "PATCH",
+    headers: authHeaders(),
+  });
+  
+  if (!resp.ok) {
+    if (resp.status === 401 || resp.status === 403) {
+      throw new Error("Bạn không có quyền lưu trữ báo cáo.");
+    }
+    if (resp.status === 404) {
+      throw new Error("Không tìm thấy báo cáo.");
+    }
+    if (resp.status === 400) {
+      const errorText = await resp.text().catch(() => "Chỉ có thể lưu trữ báo cáo ở trạng thái FINALIZED.");
+      throw new Error(errorText || "Chỉ có thể lưu trữ báo cáo ở trạng thái FINALIZED.");
+    }
+    const text = await resp.text().catch(() => resp.statusText);
+    throw new Error(text || `Failed to archive report (${resp.status})`);
+  }
+  
+  return (await resp.json()) as ReportResponse;
 }
 

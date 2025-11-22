@@ -14,7 +14,8 @@ import {
   User,
   Users,
   ShieldCheck,
-  FileText
+  FileText,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -32,6 +33,7 @@ const navigation = [
   { name: 'Quản lý khách hàng', href: '/accounts', icon: Users },
   { name: 'Xác minh danh tính', href: '/identity-verification', icon: ShieldCheck },
   { name: 'Quản lý báo cáo', href: '/reports', icon: FileText },
+  { name: 'Báo cáo khách hàng', href: '/incident-reports', icon: AlertTriangle },
   { name: 'Quản lý feedback', href: '/feedbacks', icon: AlertCircle },
 ];
 

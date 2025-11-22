@@ -11,13 +11,17 @@ import StaffStationOrdersPage from "./pages/staffPage/StaffStationOrdersPage";
 import StaffAccountManagementPage from "./pages/staffPage/StaffAccountManagementPage";
 import StaffIdentityVerificationPage from "./pages/staffPage/StaffIdentityVerificationPage";
 import StaffReportsPage from "./pages/staffPage/StaffReportsPage";
+import StaffIncidentReportsPage from "./pages/staffPage/StaffIncidentReportsPage";
 import StaffFeedbacksPage from "./pages/staffPage/StaffFeedbacksPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
 import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
-import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
 import AdminBillingsPage from "./pages/adminPage/AdminBillingsPage";
+import AdminReportsPage from "./pages/adminPage/AdminReportsPage";
+import AdminFeedbacksPage from "./pages/adminPage/AdminFeedbacksPage";
+import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
+import AdminIncidentReportsPage from "./pages/adminPage/AdminIncidentReportsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -70,6 +74,11 @@ const App = () => (
               <StaffReportsPage />
             </ProtectedRoute>
           } />
+          <Route path="/incident-reports" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffIncidentReportsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/feedbacks" element={
             <ProtectedRoute requiredRole="staff">
               <StaffFeedbacksPage />
@@ -112,19 +121,29 @@ const App = () => (
               <AdminEmployeesPage />
             </ProtectedRoute>
           } />
+          <Route path="/admin/billings" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminBillingsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/reports" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminReportsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/feedbacks" element={
+            <ProtectedRoute requiredRole="admin">
+              <AdminFeedbacksPage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/models" element={
             <ProtectedRoute requiredRole="admin">
               <AdminModelsPage />
             </ProtectedRoute>
           } />
-          <Route path="/admin/adminModels" element={
+          <Route path="/admin/incident-reports" element={
             <ProtectedRoute requiredRole="admin">
-              <AdminModelsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/billings" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminBillingsPage />
+              <AdminIncidentReportsPage />
             </ProtectedRoute>
           } />
           

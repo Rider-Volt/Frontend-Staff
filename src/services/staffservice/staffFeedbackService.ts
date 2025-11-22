@@ -11,6 +11,8 @@ export interface FeedbackItem {
   type?: string;
   rating?: number;
   content?: string;
+  imageUrls?: string[];
+  // For backward compatibility
   imageUrl?: string;
   status?: FeedbackStatus;
   staffNote?: string;

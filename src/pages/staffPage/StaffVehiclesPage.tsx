@@ -5,17 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Car, RefreshCw, AlertCircle, Search, Battery, Clock, Edit, Pin, LucideIcon } from "lucide-react";
+import { Car, RefreshCw, AlertCircle, Search, Battery, Clock, Edit, Pin, Gauge, LucideIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { 
   getStaffVehicles, 
   getStaffVehiclesByStatus, 
-  updateVehicleStatus, 
+  updateVehicleStatus,
+  updateVehicleTelemetry,
   type StaffVehicle,
   getVehicleStatusInfo 
 } from "@/services/staffservice/staffVehicleService";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 const formatCurrency = (v: number) => `${v.toLocaleString()}đ/ngày`;
 
@@ -77,6 +79,8 @@ const StaffVehiclesPage = () => {
   const [updatingIds, setUpdatingIds] = useState<Set<number>>(new Set());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<StaffVehicle | null>(null);
+  const [editCurrentKm, setEditCurrentKm] = useState<string>("");
+  const [editCurrentPin, setEditCurrentPin] = useState<string>("");
   
 
   const fetchVehicles = async () => {
@@ -173,7 +177,34 @@ const StaffVehiclesPage = () => {
 
   const handleEditVehicle = (vehicle: StaffVehicle) => {
     setEditingVehicle(vehicle);
+    setEditCurrentKm(vehicle.currentKm?.toString() || "0");
+    setEditCurrentPin(vehicle.currentPin?.toString() || "0");
     setIsEditDialogOpen(true);
+  };
+
+  const handleTelemetryUpdate = async (vehicleId: number, currentKm: number, currentPin: number) => {
+    setUpdatingIds(prev => new Set(prev).add(vehicleId));
+    try {
+      await updateVehicleTelemetry(vehicleId, currentKm, currentPin);
+      toast({
+        title: "Thành công",
+        description: "Cập nhật telemetry xe thành công",
+      });
+      await fetchVehicles();
+    } catch (error) {
+      console.error("Error updating vehicle telemetry:", error);
+      toast({
+        title: "Lỗi",
+        description: error instanceof Error ? error.message : "Không thể cập nhật telemetry xe",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdatingIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(vehicleId);
+        return newSet;
+      });
+    }
   };
   
 
@@ -292,10 +323,12 @@ const StaffVehiclesPage = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Ảnh</TableHead>
-                      {/* <TableHead>Model</TableHead> */}
+                      <TableHead>Mã xe</TableHead>
+                      <TableHead>Model</TableHead>
                       <TableHead>Loại xe</TableHead>
                       <TableHead>Biển số</TableHead>
                       <TableHead>Pin (%)</TableHead>
+                      <TableHead>Km</TableHead>
                       <TableHead>Trạm</TableHead>
                       <TableHead>Giá/ngày</TableHead>
                       <TableHead>Trạng thái</TableHead>
@@ -323,6 +356,7 @@ const StaffVehiclesPage = () => {
                               </div>
                             )}
                           </TableCell>
+                          <TableCell className="font-semibold text-black">#{vehicle.vehicleId}</TableCell>
                           <TableCell>{vehicle.model}</TableCell>
                           <TableCell className="text-gray-600 capitalize">{vehicle.vehicleType || 'N/A'}</TableCell>
                           <TableCell>{vehicle.licensePlate}</TableCell>
@@ -330,6 +364,12 @@ const StaffVehiclesPage = () => {
                             <div className="flex items-center gap-1.5">
                               <Pin className="h-4 w-4 text-gray-500" />
                               <span className="font-medium">{vehicle.currentPin ?? 'N/A'}%</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1.5">
+                              <Gauge className="h-4 w-4 text-gray-500" />
+                              <span className="font-medium">{vehicle.currentKm?.toLocaleString() ?? 'N/A'} km</span>
                             </div>
                           </TableCell>
                           <TableCell className="text-sm">{vehicle.stationName}</TableCell>
@@ -347,7 +387,7 @@ const StaffVehiclesPage = () => {
                               disabled={isUpdating}
                             >
                               <Edit className="mr-2 h-4 w-4" />
-                              Cập nhật trạng thái
+                              Cập nhật
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -362,35 +402,33 @@ const StaffVehiclesPage = () => {
 
         {/* Dialog Cập Nhật Trạng Thái Xe */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-sm">
+          <DialogContent className="max-w-md">
             <DialogHeader>
-              <DialogTitle>Cập Nhật Trạng Thái Xe</DialogTitle>
+              <DialogTitle>Cập Nhật Thông Tin Xe</DialogTitle>
             </DialogHeader>
             {editingVehicle && (
               <div className="space-y-4">
                 {/* Hiển thị thông tin xe */}
-                <div className="text-center">
+                <div className="text-center pb-2 border-b">
                   <p className="text-sm text-gray-600">Xe #{editingVehicle.vehicleId}</p>
                   <p className="font-medium">{editingVehicle.model}</p>
                   <p className="text-sm text-gray-500">{editingVehicle.licensePlate}</p>
                 </div>
                 
+                {/* Cập nhật trạng thái */}
                 <div>
-                  <label className="text-sm font-medium">Trạng thái hiện tại</label>
-                  <div className="mt-1">
+                  <Label className="text-sm font-medium">Trạng thái hiện tại</Label>
+                  <div className="mt-1 mb-2">
                     <Badge className={getVehicleStatusInfo(editingVehicle.status).className}>
                       {getVehicleStatusInfo(editingVehicle.status).text}
                     </Badge>
                   </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium">Chọn trạng thái mới <span className="text-red-500">*</span></label>
+                  <Label className="text-sm font-medium">Chọn trạng thái mới <span className="text-red-500">*</span></Label>
                   <Select 
                     value={editingVehicle.status} 
                     onValueChange={(value) => setEditingVehicle({...editingVehicle, status: value})}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="mt-1">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -402,17 +440,126 @@ const StaffVehiclesPage = () => {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Cập nhật telemetry */}
+                <div className="space-y-3 pt-2 border-t">
+                  <Label className="text-sm font-medium">Telemetry</Label>
+                  
+                  <div>
+                    <Label htmlFor="currentKm" className="text-sm font-medium">
+                      Số km hiện tại (km) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="currentKm"
+                      type="number"
+                      min="0"
+                      value={editCurrentKm}
+                      onChange={(e) => setEditCurrentKm(e.target.value)}
+                      className="mt-1"
+                      placeholder="Nhập số km"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="currentPin" className="text-sm font-medium">
+                      Pin hiện tại (%) <span className="text-red-500">*</span>
+                    </Label>
+                    <Input
+                      id="currentPin"
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={editCurrentPin}
+                      onChange={(e) => setEditCurrentPin(e.target.value)}
+                      className="mt-1"
+                      placeholder="Nhập % pin (0-100)"
+                    />
+                  </div>
+                </div>
                 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-2 pt-2">
                   <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
                     Hủy
                   </Button>
-                  <Button onClick={() => {
-                    // Cập nhật trạng thái xe
-                    handleStatusUpdate(editingVehicle.vehicleId, editingVehicle.status);
-                    setIsEditDialogOpen(false);
-                  }}>
-                    Cập nhật
+                  <Button 
+                    onClick={async () => {
+                      const vehicleId = editingVehicle.vehicleId;
+                      const isUpdating = updatingIds.has(vehicleId);
+                      
+                      if (isUpdating) return;
+
+                      // Validate inputs
+                      const currentKm = parseFloat(editCurrentKm);
+                      const currentPin = parseFloat(editCurrentPin);
+                      
+                      if (isNaN(currentKm) || currentKm < 0) {
+                        toast({
+                          title: "Lỗi",
+                          description: "Số km không hợp lệ. Vui lòng nhập số lớn hơn hoặc bằng 0.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      
+                      if (isNaN(currentPin) || currentPin < 0 || currentPin > 100) {
+                        toast({
+                          title: "Lỗi",
+                          description: "Pin không hợp lệ. Vui lòng nhập số từ 0 đến 100.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+
+                      try {
+                        const originalVehicle = vehicles.find(v => v.vehicleId === vehicleId);
+                        if (!originalVehicle) {
+                          toast({
+                            title: "Lỗi",
+                            description: "Không tìm thấy thông tin xe.",
+                            variant: "destructive",
+                          });
+                          return;
+                        }
+
+                        // Cập nhật trạng thái nếu thay đổi
+                        const statusChanged = editingVehicle.status !== originalVehicle.status;
+                        if (statusChanged) {
+                          await handleStatusUpdate(vehicleId, editingVehicle.status);
+                        }
+
+                        // Cập nhật telemetry nếu thay đổi
+                        const telemetryChanged = 
+                          originalVehicle.currentKm !== currentKm || 
+                          originalVehicle.currentPin !== currentPin;
+                        
+                        if (telemetryChanged) {
+                          await handleTelemetryUpdate(vehicleId, currentKm, currentPin);
+                        }
+
+                        // Nếu không có thay đổi nào
+                        if (!statusChanged && !telemetryChanged) {
+                          toast({
+                            title: "Thông báo",
+                            description: "Không có thay đổi nào để cập nhật.",
+                          });
+                        }
+
+                        setIsEditDialogOpen(false);
+                      } catch (error) {
+                        // Error đã được xử lý trong các handler
+                        console.error("Error updating vehicle:", error);
+                      }
+                    }}
+                    disabled={updatingIds.has(editingVehicle.vehicleId)}
+                  >
+                    {updatingIds.has(editingVehicle.vehicleId) ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Đang cập nhật...
+                      </>
+                    ) : (
+                      "Cập nhật"
+                    )}
                   </Button>
                 </div>
               </div>

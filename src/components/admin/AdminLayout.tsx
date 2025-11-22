@@ -10,11 +10,13 @@ import {
   Menu,
   LogOut,
   User,
-  PackageSearch,
   Clock,
   Brain,
   ReceiptText,
-  BarChart3
+  BarChart3,
+  MessageSquare,
+  Package,
+  AlertTriangle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -26,11 +28,13 @@ interface AdminLayoutProps {
 const menuItems = [
   { title: "Tổng quan", url: "/admin", icon: LayoutDashboard },
   { title: "Quản lý xe", url: "/admin/vehicles", icon: CarIcon },
-  { title: "Models xe", url: "/admin/models", icon: PackageSearch },
+  { title: "Quản lý model", url: "/admin/models", icon: Package },
   { title: "Đơn thuê", url: "/admin/billings", icon: ReceiptText },
   { title: "Điểm thuê", url: "/admin/stations", icon: MapPin },
   { title: "Nhân viên", url: "/admin/employees", icon: UserCog },
-  // { title: "Báo cáo & Phân tích", url: "/admin/reports-analytics", icon: BarChart3 },
+  { title: "Báo cáo", url: "/admin/reports", icon: BarChart3 },
+  { title: "Báo cáo khách hàng", url: "/admin/incident-reports", icon: AlertTriangle },
+  { title: "Feedback", url: "/admin/feedbacks", icon: MessageSquare },
   // { title: "Dự báo AI", url: "/admin/ai-forecast", icon: Brain },
 ];
 

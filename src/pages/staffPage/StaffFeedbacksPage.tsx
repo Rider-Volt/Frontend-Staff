@@ -3,6 +3,7 @@ import { StaffLayout } from "@/components/staff/StaffLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { getPendingFeedbacks, FeedbackItem, approveFeedback, rejectFeedback, forwardFeedback } from "@/services/staffservice/staffFeedbackService";
+import { getRenters } from "@/services/staffservice/staffAccountService";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Search, RefreshCw, Image as ImageIcon } from "lucide-react";
@@ -16,8 +17,9 @@ const StaffFeedbacksPage: React.FC = () => {
   const [search, setSearch] = useState("");
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [actionFor, setActionFor] = useState<{ item: FeedbackItem; action: "approve" | "reject" | "forward" } | null>(null);
+  const [actionFor, setActionFor] = useState<{ item: FeedbackItem; action: "approve" | "reject" | "forward" | "view" } | null>(null);
   const [actionNote, setActionNote] = useState("");
+  const [renterNames, setRenterNames] = useState<Record<number, string>>({});
 
   async function load() {
     try {
@@ -35,8 +37,23 @@ const StaffFeedbacksPage: React.FC = () => {
     }
   }
 
+  // Load renter data
+  const loadRenters = async () => {
+    try {
+      const renters = await getRenters();
+      const namesMap = renters.reduce((acc, renter) => {
+        acc[renter.id] = renter.name || `Khách hàng #${renter.id}`;
+        return acc;
+      }, {} as Record<number, string>);
+      setRenterNames(namesMap);
+    } catch (error) {
+      console.error('Error loading renters:', error);
+    }
+  };
+
   useEffect(() => {
     load();
+    loadRenters();
   }, []);
 
   const handleAction = async (action: "approve" | "reject" | "forward", item: FeedbackItem) => {
@@ -66,7 +83,7 @@ const StaffFeedbacksPage: React.FC = () => {
               <ImageIcon className="h-8 w-8 text-blue-500 mr-3" />
               Quản lý Feedback
             </h1>
-            <p className="text-gray-600">Thực hiện xử lý các phản hồi của khách hàng: duyệt, từ chối hoặc chuyển lên admin.</p>
+            <p className="text-gray-600">Thực hiện xử lý các phản hồi của khách hàng: từ chối hoặc chuyển lên admin.</p>
           </div>
         </div>
 
@@ -121,15 +138,23 @@ const StaffFeedbacksPage: React.FC = () => {
                         <TableRow key={f.id}>
                           <TableCell className="font-medium text-blue-600">#{f.id}</TableCell>
                           <TableCell>{f.billingId ? `#${f.billingId}` : '-'}</TableCell>
-                          <TableCell>{f.renterId ? `#${f.renterId}` : '-'}</TableCell>
+                          <TableCell>{f.renterId ? (renterNames[f.renterId] || `#${f.renterId}`) : '-'}</TableCell>
                           <TableCell>{f.staffId ? `#${f.staffId}` : '-'}</TableCell>
                           <TableCell>{f.type}</TableCell>
                           <TableCell>{f.rating ?? '-'}</TableCell>
                           <TableCell className="max-w-sm truncate">{f.content}</TableCell>
                           <TableCell>
-                            {f.imageUrl ? (
-                              <Button variant="outline" size="sm" onClick={() => setViewingImage(f.imageUrl!)}>
-                                Xem ảnh
+                            {f.imageUrls && f.imageUrls.length > 0 ? (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setViewingImage(f.imageUrls[0]);
+                                  setActionFor({ item: f, action: 'view' });
+                                }}
+                              >
+                                Xem ảnh ({f.imageUrls.length})
                               </Button>
                             ) : (
                               <span className="text-gray-400">-</span>
@@ -141,9 +166,6 @@ const StaffFeedbacksPage: React.FC = () => {
                           <TableCell className="text-right">
                             {(f.status === "PENDING_REVIEW" || !f.status || f.status === "") ? (
                               <div className="flex justify-end gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => { setActionFor({ item: f, action: 'approve' }); setActionNote(f.staffNote || ''); setActionDialogOpen(true); }}>
-                                  Duyệt
-                                </Button>
                                 <Button variant="destructive" size="sm" onClick={() => { setActionFor({ item: f, action: 'reject' }); setActionNote(f.staffNote || ''); setActionDialogOpen(true); }}>
                                   Từ chối
                                 </Button>
@@ -182,16 +204,109 @@ const StaffFeedbacksPage: React.FC = () => {
 
         {/* Image viewer dialog */}
         <Dialog open={!!viewingImage} onOpenChange={(open) => !open && setViewingImage(null)}>
-          <DialogContent className="max-w-3xl max-h-[90vh]">
+          <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
             <DialogHeader>
-              <DialogTitle>Ảnh feedback</DialogTitle>
-              <DialogDescription>Xem ảnh gửi kèm phản hồi</DialogDescription>
+              <DialogTitle className="flex items-center gap-2">
+                <span>Hình ảnh phản hồi</span>
+                {actionFor?.item?.imageUrls && actionFor.item.imageUrls.length > 1 && (
+                  <span className="text-sm font-normal text-gray-500">
+                    ({actionFor.item.imageUrls.findIndex(url => url === viewingImage) + 1} / {actionFor.item.imageUrls.length})
+                  </span>
+                )}
+              </DialogTitle>
             </DialogHeader>
-            <div className="mt-4">
-              {viewingImage ? (
-                // eslint-disable-next-line jsx-a11y/img-redundant-alt
-                <img src={viewingImage} alt="feedback image" className="w-full h-auto rounded" />
-              ) : null}
+            <div className="flex-1 overflow-auto flex justify-center items-center p-4 relative">
+              {actionFor?.item?.imageUrls && actionFor.item.imageUrls.length > 1 && (
+                <>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!actionFor?.item?.imageUrls) return;
+                      const currentIndex = actionFor.item.imageUrls.indexOf(viewingImage || '');
+                      const prevIndex = (currentIndex - 1 + actionFor.item.imageUrls.length) % actionFor.item.imageUrls.length;
+                      setViewingImage(actionFor.item.imageUrls[prevIndex]);
+                    }}
+                    className="absolute left-4 bg-white/80 hover:bg-white p-2 rounded-full shadow-md z-10"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m15 18-6-6 6-6"/>
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!actionFor?.item?.imageUrls) return;
+                      const currentIndex = actionFor.item.imageUrls.indexOf(viewingImage || '');
+                      const nextIndex = (currentIndex + 1) % actionFor.item.imageUrls.length;
+                      setViewingImage(actionFor.item.imageUrls[nextIndex]);
+                    }}
+                    className="absolute right-4 bg-white/80 hover:bg-white p-2 rounded-full shadow-md z-10"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                  </button>
+                </>
+              )}
+              
+              <div className="max-h-[60vh] flex items-center">
+                {viewingImage && (
+                  <img 
+                    src={viewingImage} 
+                    alt="Feedback" 
+                    className="max-h-[60vh] max-w-full object-contain"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = '/placeholder.svg';
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+            
+            {actionFor?.item?.imageUrls && actionFor.item.imageUrls.length > 1 && (
+              <div className="flex justify-center gap-2 mt-2 overflow-x-auto py-2 px-4 border-t">
+                {actionFor.item.imageUrls.map((url, index) => (
+                  <button
+                    key={index}
+                    className={`flex-shrink-0 w-16 h-16 border-2 rounded overflow-hidden transition-all ${
+                      viewingImage === url 
+                        ? 'border-blue-500 scale-105' 
+                        : 'border-transparent hover:border-gray-300 hover:scale-105'
+                    }`}
+                    onClick={() => setViewingImage(url)}
+                  >
+                    <img 
+                      src={url} 
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        target.onerror = null;
+                        target.src = '/placeholder.svg';
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+            
+            <div className="flex justify-between items-center px-4 py-2 border-t">
+              <div className="text-sm text-gray-500">
+                {actionFor?.item?.imageUrls && viewingImage && (
+                  <span>Ảnh {actionFor.item.imageUrls.indexOf(viewingImage) + 1} / {actionFor.item.imageUrls.length}</span>
+                )}
+              </div>
+              <a 
+                href={viewingImage} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Mở ảnh gốc
+              </a>
             </div>
           </DialogContent>
         </Dialog>
