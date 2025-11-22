@@ -292,8 +292,7 @@ const StaffVehiclesPage = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Ảnh</TableHead>
-                      <TableHead>Mã xe</TableHead>
-                      <TableHead>Model</TableHead>
+                      {/* <TableHead>Model</TableHead> */}
                       <TableHead>Loại xe</TableHead>
                       <TableHead>Biển số</TableHead>
                       <TableHead>Pin (%)</TableHead>
@@ -324,7 +323,6 @@ const StaffVehiclesPage = () => {
                               </div>
                             )}
                           </TableCell>
-                          <TableCell className="font-medium">#{vehicle.vehicleId}</TableCell>
                           <TableCell>{vehicle.model}</TableCell>
                           <TableCell className="text-gray-600 capitalize">{vehicle.vehicleType || 'N/A'}</TableCell>
                           <TableCell>{vehicle.licensePlate}</TableCell>

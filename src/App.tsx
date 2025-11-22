@@ -6,20 +6,17 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import StaffDashboard from "./components/staff/StaffDashboard";
 import Login from "./pages/Login";
 import StaffHandoverPage from "./pages/staffPage/StaffHandoverPage";
-import StaffPayment from "./pages/staffPage/StaffPayment";
-import StaffIssues from "./pages/staffPage/staffIssues";
 import StaffVehiclesPage from "./pages/staffPage/StaffVehiclesPage";
 import StaffStationOrdersPage from "./pages/staffPage/StaffStationOrdersPage";
 import StaffAccountManagementPage from "./pages/staffPage/StaffAccountManagementPage";
 import StaffIdentityVerificationPage from "./pages/staffPage/StaffIdentityVerificationPage";
 import StaffReportsPage from "./pages/staffPage/StaffReportsPage";
+import StaffFeedbacksPage from "./pages/staffPage/StaffFeedbacksPage";
 import AdminDashboard from "./components/admin/AdminDashboard";
 import AdminStationsPage from "./pages/adminPage/AdminStationsPage";
 import AdminVehiclesPage from "./pages/adminPage/AdminVehiclesPage";
 import AdminEmployeesPage from "./pages/adminPage/AdminEmployeesPage";
 import AdminModelsPage from "./pages/adminPage/AdminModelsPage";
-import AdminReportsAnalyticsPage from "./pages/adminPage/AdminReportsAnalyticsPage";
-import AdminAIForecastNewPage from "./pages/adminPage/AdminAIForecastNewPage";
 import AdminBillingsPage from "./pages/adminPage/AdminBillingsPage";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -48,16 +45,6 @@ const App = () => (
               <StaffHandoverPage />
             </ProtectedRoute>
           } />
-          <Route path="/payment" element={
-            <ProtectedRoute requiredRole="staff">
-              <StaffPayment />
-            </ProtectedRoute>
-          } />
-          <Route path="/issues" element={
-            <ProtectedRoute requiredRole="staff">
-              <StaffIssues />
-            </ProtectedRoute>
-          } />
           <Route path="/vehicles" element={
             <ProtectedRoute requiredRole="staff">
               <StaffVehiclesPage />
@@ -81,6 +68,11 @@ const App = () => (
           <Route path="/reports" element={
             <ProtectedRoute requiredRole="staff">
               <StaffReportsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/feedbacks" element={
+            <ProtectedRoute requiredRole="staff">
+              <StaffFeedbacksPage />
             </ProtectedRoute>
           } />
           
@@ -128,16 +120,6 @@ const App = () => (
           <Route path="/admin/adminModels" element={
             <ProtectedRoute requiredRole="admin">
               <AdminModelsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/reports-analytics" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminReportsAnalyticsPage />
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/ai-forecast" element={
-            <ProtectedRoute requiredRole="admin">
-              <AdminAIForecastNewPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/billings" element={

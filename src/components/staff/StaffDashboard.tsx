@@ -182,7 +182,6 @@ const StaffDashboard = () => {
                   {...vehicle}
                   onHandover={() => navigate("/handover")}
                   onUpdateStatus={() => {}}
-                  onReport={() => navigate("/issues")}
                 />
               ))}
             </div>

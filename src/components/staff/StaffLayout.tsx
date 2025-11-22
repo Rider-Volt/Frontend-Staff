@@ -27,13 +27,12 @@ interface StaffLayoutProps {
 const navigation = [
   { name: "Tổng quan", href: "/", icon: LayoutDashboard },
   { name: "Quản lý xe", href: "/vehicles", icon: Car },
-  { name: "Giao/Trả xe", href: "/handover", icon: ClipboardCheck },
-  // { name: "Thanh toán", href: "/payment", icon: CreditCard },
-  // { name: "Báo cáo sự cố", href: "/issues", icon: AlertCircle },
+  { name: "Giao/Trả xe", href: "/handover", icon: ClipboardCheck }, 
   { name: 'Quản lý đơn thuê', href: '/orders', icon: Calendar },
   { name: 'Quản lý khách hàng', href: '/accounts', icon: Users },
   { name: 'Xác minh danh tính', href: '/identity-verification', icon: ShieldCheck },
   { name: 'Quản lý báo cáo', href: '/reports', icon: FileText },
+  { name: 'Quản lý feedback', href: '/feedbacks', icon: AlertCircle },
 ];
 
 const Sidebar = () => {

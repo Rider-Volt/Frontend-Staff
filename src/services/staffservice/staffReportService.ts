@@ -54,9 +54,9 @@ function authHeaders(): HeadersInit {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-// GET /api/staff/reports - Get all reports
+// GET /api/staff/business-reports - Get all reports
 export async function getAllReports(): Promise<ReportResponse[]> {
-  const resp = await fetch(`${API_BASE}/staff/reports`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports`, {
     method: "GET",
     headers: { 
       ...authHeaders(),
@@ -73,9 +73,9 @@ export async function getAllReports(): Promise<ReportResponse[]> {
   return (await resp.json()) as ReportResponse[];
 }
 
-// GET /api/staff/reports/{reportId} - Get report by ID
+// GET /api/staff/business-reports/{reportId} - Get report by ID
 export async function getReportById(reportId: number): Promise<ReportResponse> {
-  const resp = await fetch(`${API_BASE}/staff/reports/${reportId}`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports/${reportId}`, {
     method: "GET",
     headers: { 
       ...authHeaders(),
@@ -95,9 +95,9 @@ export async function getReportById(reportId: number): Promise<ReportResponse> {
   return (await resp.json()) as ReportResponse;
 }
 
-// GET /api/staff/reports/status/{status} - Get reports by status
+// GET /api/staff/business-reports/status/{status} - Get reports by status
 export async function getReportsByStatus(status: ReportStatus): Promise<ReportResponse[]> {
-  const resp = await fetch(`${API_BASE}/staff/reports/status/${status}`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports/status/${status}`, {
     method: "GET",
     headers: { 
       ...authHeaders(),
@@ -114,9 +114,9 @@ export async function getReportsByStatus(status: ReportStatus): Promise<ReportRe
   return (await resp.json()) as ReportResponse[];
 }
 
-// POST /api/staff/reports - Create new report
+// POST /api/staff/business-reports - Create new report
 export async function createReport(data: CreateReportRequest): Promise<ReportResponse> {
-  const resp = await fetch(`${API_BASE}/staff/reports`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports`, {
     method: "POST",
     headers: { 
       ...authHeaders(),
@@ -138,12 +138,12 @@ export async function createReport(data: CreateReportRequest): Promise<ReportRes
   return (await resp.json()) as ReportResponse;
 }
 
-// PUT /api/staff/reports/{reportId} - Update report
+// PUT /api/staff/business-reports/{reportId} - Update report
 export async function updateReport(
   reportId: number,
   data: UpdateReportRequest
 ): Promise<ReportResponse> {
-  const resp = await fetch(`${API_BASE}/staff/reports/${reportId}`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports/${reportId}`, {
     method: "PUT",
     headers: { 
       ...authHeaders(),
@@ -168,7 +168,7 @@ export async function updateReport(
   return (await resp.json()) as ReportResponse;
 }
 
-// PATCH /api/staff/reports/{reportId}/status - Update report status
+// PATCH /api/staff/business-reports/{reportId}/status - Update report status
 // Supports DRAFT→FINALIZED, FINALIZED→ARCHIVED transitions
 export async function updateReportStatus(
   reportId: number,
@@ -179,7 +179,7 @@ export async function updateReportStatus(
   if (note && note.trim()) {
     body.note = note.trim();
   }
-  const resp = await fetch(`${API_BASE}/staff/reports/${reportId}/status`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports/${reportId}/status`, {
     method: "PATCH",
     headers: { 
       ...authHeaders(),
@@ -204,9 +204,9 @@ export async function updateReportStatus(
   return (await resp.json()) as ReportResponse;
 }
 
-// DELETE /api/staff/reports/{reportId} - Delete report
+// DELETE /api/staff/business-reports/{reportId} - Delete report (only if DRAFT)
 export async function deleteReport(reportId: number): Promise<void> {
-  const resp = await fetch(`${API_BASE}/staff/reports/${reportId}`, {
+  const resp = await fetch(`${API_BASE}/staff/business-reports/${reportId}`, {
     method: "DELETE",
     headers: { ...authHeaders() },
   });
@@ -216,6 +216,10 @@ export async function deleteReport(reportId: number): Promise<void> {
     }
     if (resp.status === 404) {
       throw new Error("Không tìm thấy báo cáo để xóa.");
+    }
+    if (resp.status === 400) {
+      const errorText = await resp.text().catch(() => "Chỉ có thể xóa báo cáo ở trạng thái DRAFT.");
+      throw new Error(errorText || "Chỉ có thể xóa báo cáo ở trạng thái DRAFT.");
     }
     const text = await resp.text().catch(() => resp.statusText);
     throw new Error(text || `Failed to delete report (${resp.status})`);

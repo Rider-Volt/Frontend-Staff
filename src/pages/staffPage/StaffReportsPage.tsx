@@ -476,8 +476,8 @@ const StaffReportsPage = () => {
         {/* Filters and Search */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="space-y-2">
+            <div className="flex flex-col md:flex-row gap-4 items-end">
+              <div className="flex-1 space-y-2 w-full md:w-auto">
                 <Label htmlFor="search">Tìm kiếm</Label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -490,7 +490,7 @@ const StaffReportsPage = () => {
                   />
                 </div>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 w-full md:w-auto md:min-w-[200px]">
                 <Label htmlFor="status-filter">Lọc theo trạng thái</Label>
                 <Select
                   value={statusFilter}
@@ -509,9 +509,7 @@ const StaffReportsPage = () => {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Button variant="outline" onClick={fetchReports} disabled={loading}>
+              <Button variant="outline" onClick={fetchReports} disabled={loading} className="w-full md:w-auto">
                 <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
                 Làm mới
               </Button>

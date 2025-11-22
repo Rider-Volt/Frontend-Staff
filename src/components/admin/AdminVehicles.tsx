@@ -631,7 +631,6 @@ const AdminVehicles = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>Ảnh</TableHead>
-                <TableHead>Mã xe</TableHead>
                 <TableHead>Model</TableHead>
                 <TableHead>Loại Xe</TableHead>
                 <TableHead>Biển Số</TableHead>
@@ -645,7 +644,7 @@ const AdminVehicles = () => {
             <TableBody>
               {filteredVehicles.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-8 text-gray-500">
+                  <TableCell colSpan={9} className="text-center py-8 text-gray-500">
                     Không có xe nào
                   </TableCell>
                 </TableRow>
@@ -663,7 +662,6 @@ const AdminVehicles = () => {
                           />
                         )}
                       </TableCell>
-                      <TableCell className="font-medium">#{vehicle.vehicleId}</TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {vehicle.model || 'Chưa có model'}
                       </TableCell>

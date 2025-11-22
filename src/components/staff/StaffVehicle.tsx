@@ -18,7 +18,6 @@ interface StaffVehicleProps {
   currentPin?: number;
   onHandover?: () => void;
   onUpdateStatus?: () => void;
-  onReport?: () => void;
 }
 
 const statusConfig = {
@@ -36,7 +35,6 @@ export const StaffVehicle = ({
   currentPin,
   onHandover,
   onUpdateStatus,
-  onReport,
 }: StaffVehicleProps) => {
   const statusInfo = statusConfig[status];
 
@@ -56,7 +54,6 @@ export const StaffVehicle = ({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onHandover}>Giao xe</DropdownMenuItem>
               <DropdownMenuItem onClick={onUpdateStatus}>Cập nhật trạng thái</DropdownMenuItem>
-              <DropdownMenuItem onClick={onReport}>Báo cáo sự cố</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
